@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "pre-commit>=4"]
 
 [project.scripts]
 zen-profile-selector = "zen_profile_selector.app:main"
@@ -32,3 +32,17 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 zen_profile_selector = ["assets/*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
