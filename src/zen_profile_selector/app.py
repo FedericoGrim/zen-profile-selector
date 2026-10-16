@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import replace
@@ -13,6 +15,7 @@ from tkinter import filedialog
 import customtkinter as ctk
 
 from .config import Settings, config_dir, load_settings, save_settings, validate_settings
+from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
 from .i18n import LANGUAGES, detect_language, translate
 from .layout import grid_columns, primary_monitor
 from .profiles import (
@@ -529,6 +532,27 @@ class ProfileSelector:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="zen-profile-selector", description="Profile picker for Zen Browser."
+    )
+    parser.add_argument(
+        "--install-desktop", action="store_true", help="add the selector to the applications menu"
+    )
+    parser.add_argument(
+        "--uninstall-desktop", action="store_true", help="remove it from the applications menu"
+    )
+    args = parser.parse_args()
+
+    target = desktop_file(os.environ, Path.home())
+    if args.install_desktop:
+        install_desktop_entry(target, Path(sys.executable), ASSETS / "icon.png")
+        print(f"Added to the applications menu: {target}")
+        return
+    if args.uninstall_desktop:
+        removed = uninstall_desktop_entry(target)
+        print("Removed from the applications menu." if removed else "It was not in the applications menu.")
+        return
+
     root = ctk.CTk()
     ProfileSelector(root, config_dir(os.environ, Path.home()))
     root.mainloop()
