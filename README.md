@@ -6,7 +6,9 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 
 > **Unofficial project.** Not affiliated with, endorsed by or supported by the Zen Browser team.
 
-> **Status: in development.** The first release (0.1.0) is being assembled from a working personal tool. Until it is tagged, the install command below may not work yet. Follow the [pull requests](https://github.com/FedericoGrim/zen-profile-selector/pulls) to see progress.
+> **Status: first release coming.** The code is complete on the `develop` branch and will reach `main` with version 0.1.0. Until then, the install command below has nothing to install yet.
+
+![The profile grid](docs/screenshots/profiles.png)
 
 ## Features
 
@@ -16,6 +18,10 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 - **Safe deletion**: you must type the profile name to confirm. Profiles that are open in Zen cannot be deleted, the last profile cannot be deleted, and the profile folder goes to your **Trash**, so it can be restored. A backup of `profiles.ini` is written before every change.
 - **Works with any Zen install**: detects the Flatpak (`app.zen_browser.zen`) and native installs (`zen` / `zen-browser` on your `PATH`) automatically. If detection fails, set the Zen command and profiles folder by hand in **Settings** (⚙, top right).
 - **English and Italian**: pick the language from the menu next to ⚙. The choice is remembered.
+
+| Edit a profile | Settings |
+|---|---|
+| ![Edit profile dialog](docs/screenshots/edit-profile.png) | ![Settings dialog](docs/screenshots/settings.png) |
 
 ## Requirements
 
@@ -57,7 +63,7 @@ The selector reads Zen's `profiles.ini` from the detected profiles folder:
 - Flatpak: `~/.var/app/app.zen_browser.zen/.zen`
 - Native: `~/.zen`
 
-Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deleting edit `profiles.ini` directly, because Zen has no command for them. In that case the selector keeps the `[ProfileN]` sections numbered without gaps (Zen stops reading at the first gap), and moves the default profile to another one if needed.
+Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deleting edit `profiles.ini` directly, because Zen has no command for them; the previous version is kept as `profiles.ini.selector-bak`. In that case the selector keeps the `[ProfileN]` sections numbered without gaps (Zen stops reading at the first gap), and moves the default profile to another one if needed.
 
 ## Limitations
 
