@@ -5,12 +5,14 @@ import shutil
 import subprocess
 import tkinter as tk
 from collections.abc import Callable
+from dataclasses import replace
 from functools import partial
 from pathlib import Path
 
 import customtkinter as ctk
 
-from .config import Settings, config_dir, load_settings
+from .config import Settings, config_dir, load_settings, save_settings
+from .i18n import LANGUAGES, detect_language, translate
 from .layout import grid_columns, primary_monitor
 from .profiles import (
     DEFAULT_ICON,
@@ -31,17 +33,6 @@ from .zen import ZenInstall, create_profile_command, detect_zen, launch_command
 ASSETS = Path(__file__).with_name("assets")
 ICONS_FILE_NAME = "profile_icons.json"
 
-MESSAGES = {
-    "empty_name": "Enter a name for the profile",
-    "duplicate_name": "A profile with this name already exists",
-    "last_profile": "The last profile cannot be deleted",
-    "profile_in_use": "Close Zen before deleting this profile",
-    "trash_unavailable": "The Trash is not available (gio is missing)",
-    "trash_failed": "Could not move the profile folder to the Trash",
-    "zen_start_failed": "Could not run Zen to create the profile",
-    "create_failed": "Zen did not create the profile",
-}
-
 BACKGROUND = "#212122"
 CARD = "#2a2a2a"
 CARD_BORDER = "#333333"
@@ -56,6 +47,7 @@ class ProfileSelector:
         self.settings_dir = settings_dir
         self.icons_file = settings_dir / ICONS_FILE_NAME
         self.settings = load_settings(settings_dir)
+        self.language = self.settings.language or detect_language(os.environ)
         self.install: ZenInstall | None = None
         self.profiles: dict[str, str] = {}
 
@@ -67,6 +59,34 @@ class ProfileSelector:
         self.root.iconphoto(True, self.logo)
 
         self.build()
+
+    def text(self, key: str, **values: str) -> str:
+        return translate(self.language, key, **values)
+
+    def change_language(self, language_name: str) -> None:
+        self.language = next(code for code, name in LANGUAGES.items() if name == language_name)
+        self.settings = replace(self.settings, language=self.language)
+        save_settings(self.settings_dir, self.settings)
+        self.build()
+
+    def build_top_bar(self) -> None:
+        bar = ctk.CTkFrame(self.root, fg_color=BACKGROUND)
+        bar.pack(fill="x", padx=12, pady=(12, 0))
+        language_menu = ctk.CTkOptionMenu(
+            bar,
+            values=list(LANGUAGES.values()),
+            command=self.change_language,
+            width=110,
+            height=28,
+            fg_color=CARD,
+            button_color=CARD,
+            button_hover_color=HOVER,
+            dropdown_fg_color=CARD,
+            dropdown_hover_color=HOVER,
+            text_color=TEXT,
+        )
+        language_menu.set(LANGUAGES[self.language])
+        language_menu.pack(side="right")
 
     def detect(self, settings: Settings) -> ZenInstall | None:
         return detect_zen(
@@ -84,12 +104,13 @@ class ProfileSelector:
         self.install = self.detect(self.settings)
         self.profiles = read_profiles(self.install.profiles_dir) if self.install else {}
 
+        self.build_top_bar()
         tk.Label(self.root, image=self.logo, bg=BACKGROUND, borderwidth=0, highlightthickness=0).pack(
-            pady=(30, 20), padx=20
+            pady=(0, 20), padx=20
         )
 
         if self.install is None:
-            ctk.CTkLabel(self.root, text="Zen Browser not found", text_color=ERROR).pack(
+            ctk.CTkLabel(self.root, text=self.text("zen_not_found"), text_color=ERROR).pack(
                 padx=40, pady=(0, 40)
             )
             self.fit_window_to_content()
@@ -112,7 +133,7 @@ class ProfileSelector:
                 on_edit=partial(self.open_edit_profile_dialog, name),
             )
         row, column = divmod(len(self.profiles), columns)
-        self.create_card(grid, "＋", "New", self.open_new_profile_dialog, row, column)
+        self.create_card(grid, "＋", self.text("new_card"), self.open_new_profile_dialog, row, column)
 
         self.fit_window_to_content()
 
@@ -231,7 +252,7 @@ class ProfileSelector:
         """Name and icon form; on_confirm(name, icon) returns an error key or None."""
         dialog = self.open_dialog(title)
 
-        name_entry = ctk.CTkEntry(dialog, placeholder_text="Profile name", width=320)
+        name_entry = ctk.CTkEntry(dialog, placeholder_text=self.text("profile_name"), width=320)
         name_entry.insert(0, name)
         name_entry.pack(padx=24, pady=(24, 16))
 
@@ -269,22 +290,22 @@ class ProfileSelector:
         def confirm() -> None:
             error = on_confirm(name_entry.get().strip(), selected_icon.get())
             if error:
-                error_label.configure(text=MESSAGES[error])
+                error_label.configure(text=self.text(error))
                 return
             dialog.destroy()
             self.build()
 
         buttons = ctk.CTkFrame(dialog, fg_color=BACKGROUND)
         buttons.pack(padx=24, pady=(8, 24 if on_delete is None else 8), fill="x")
-        ctk.CTkButton(buttons, text="Cancel", fg_color=CARD, hover_color=HOVER, command=dialog.destroy).pack(
-            side="left", expand=True, padx=(0, 4)
-        )
+        ctk.CTkButton(
+            buttons, text=self.text("cancel"), fg_color=CARD, hover_color=HOVER, command=dialog.destroy
+        ).pack(side="left", expand=True, padx=(0, 4))
         ctk.CTkButton(buttons, text=confirm_text, command=confirm).pack(side="left", expand=True, padx=(4, 0))
 
         if on_delete is not None:
             ctk.CTkButton(
                 dialog,
-                text="Delete profile…",
+                text=self.text("delete_profile_button"),
                 fg_color="transparent",
                 hover_color="#3a2222",
                 text_color=ERROR,
@@ -298,7 +319,7 @@ class ProfileSelector:
         def create(name: str, icon: str) -> str | None:
             return validate_profile_name(name, self.profiles) or self.create_profile(name, icon)
 
-        self.open_profile_dialog("New profile", "Create", create)
+        self.open_profile_dialog(self.text("new_profile"), self.text("create"), create)
 
     def open_edit_profile_dialog(self, name: str) -> None:
         def save(new_name: str, icon: str) -> str | None:
@@ -312,8 +333,8 @@ class ProfileSelector:
             return None
 
         self.open_profile_dialog(
-            "Edit profile",
-            "Save",
+            self.text("edit_profile"),
+            self.text("save"),
             save,
             name=name,
             icon=icon_for(load_icons(self.icons_file), name),
@@ -322,11 +343,11 @@ class ProfileSelector:
 
     def open_delete_dialog(self, name: str, edit_dialog: ctk.CTkToplevel) -> None:
         """Confirm the deletion by typing the profile name."""
-        dialog = self.open_dialog("Delete profile")
+        dialog = self.open_dialog(self.text("delete_title"))
 
         ctk.CTkLabel(
             dialog,
-            text=f"Type «{name}» to delete this profile.\nIts folder will be moved to the Trash.",
+            text=self.text("delete_prompt", name=name),
             text_color=TEXT,
             justify="center",
         ).pack(padx=24, pady=(24, 12))
@@ -342,7 +363,7 @@ class ProfileSelector:
                 return
             error = self.delete_profile(name)
             if error:
-                error_label.configure(text=MESSAGES[error])
+                error_label.configure(text=self.text(error))
                 return
             dialog.destroy()
             edit_dialog.destroy()
@@ -350,12 +371,12 @@ class ProfileSelector:
 
         buttons = ctk.CTkFrame(dialog, fg_color=BACKGROUND)
         buttons.pack(padx=24, pady=(8, 24), fill="x")
-        ctk.CTkButton(buttons, text="Cancel", fg_color=CARD, hover_color=HOVER, command=dialog.destroy).pack(
-            side="left", expand=True, padx=(0, 4)
-        )
+        ctk.CTkButton(
+            buttons, text=self.text("cancel"), fg_color=CARD, hover_color=HOVER, command=dialog.destroy
+        ).pack(side="left", expand=True, padx=(0, 4))
         delete_button = ctk.CTkButton(
             buttons,
-            text="Delete",
+            text=self.text("delete"),
             fg_color="#b33a3a",
             hover_color="#cc4444",
             state="disabled",
