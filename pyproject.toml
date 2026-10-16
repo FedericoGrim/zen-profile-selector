@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,14 +7,14 @@ name = "zen-profile-selector"
 version = "0.1.0"
 description = "Unofficial profile picker for Zen Browser on Linux"
 readme = "README.md"
-license = { text = "GPL-3.0-or-later" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [{ name = "Federico Grimaldi" }]
 requires-python = ">=3.9"
 dependencies = ["customtkinter>=5.2"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Environment :: X11 Applications",
 ]
 
