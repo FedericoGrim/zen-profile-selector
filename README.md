@@ -71,23 +71,13 @@ Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deletin
 
 ## Contributing
 
-Issues and pull requests are welcome.
+Contributions are welcome: bug reports, translations, packaging and code. Start with [CONTRIBUTING.md](CONTRIBUTING.md), browse the [roadmap](https://github.com/FedericoGrim/zen-profile-selector/labels/roadmap) and the [`good first issue`](https://github.com/FedericoGrim/zen-profile-selector/labels/good%20first%20issue) label, and ask anything in [Discussions](https://github.com/FedericoGrim/zen-profile-selector/discussions).
 
-- The project uses Git Flow: open pull requests against `develop`.
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
-- Set up the development environment and the checks that run on every commit:
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and report security problems privately as described in [SECURITY.md](SECURITY.md). Design decisions are recorded in [docs/decisions.md](docs/decisions.md).
 
-```bash
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-```
+## Author
 
-```bash
-.venv/bin/pre-commit install --hook-type pre-commit --hook-type commit-msg
-```
-
-- Run the tests with `.venv/bin/pytest`.
-
-Design decisions are recorded in [docs/decisions.md](docs/decisions.md).
+Made by Federico Grimaldi — federico.grimaldi2006@gmail.com
 
 ## License
 

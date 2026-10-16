@@ -40,6 +40,7 @@ Simple layering (no tactical DDD: small tool without complex domain rules).
 - User-facing text only through `i18n.py`; every key exists in every language (enforced by a test). Error results are translation keys.
 - Never hardcode user paths, profile names or the Flatpak command outside `zen.py`.
 - Tests use made-up profiles and temporary folders, never real user data.
+- Pull requests into `develop` are merged with "Rebase and merge" (decision 003); merge commits only for release and back-merge PRs.
 
 ## Security & constraints
 - Never delete profile data permanently: deletion moves the folder to the Trash with `gio trash`, refuses profiles in use (`.parentlock` lock) and the last profile.
