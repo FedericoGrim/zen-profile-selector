@@ -46,3 +46,7 @@ def load_settings(folder: Path) -> Settings:
 def save_settings(folder: Path, settings: Settings) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     (folder / SETTINGS_FILE).write_text(json.dumps(asdict(settings), indent=2) + "\n", encoding="utf-8")
+
+
+def validate_settings(zen_command, profiles_dir, which):
+    raise NotImplementedError
