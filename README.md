@@ -6,8 +6,6 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 
 > **Unofficial project.** Not affiliated with, endorsed by or supported by the Zen Browser team.
 
-> **Status: first release coming.** The code is complete on the `develop` branch and will reach `main` with version 0.1.0. Until then, the install command below has nothing to install yet.
-
 ![The profile grid](docs/screenshots/profiles.png)
 
 ## Features
