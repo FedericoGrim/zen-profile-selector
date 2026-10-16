@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zen-profile-selector"
+version = "0.0.0"
+description = "Unofficial profile picker for Zen Browser on Linux"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Federico Grimaldi" }]
+requires-python = ">=3.9"
+dependencies = ["customtkinter>=5.2"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: X11 Applications",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pre-commit>=4"]
+
+[project.scripts]
+zen-profile-selector = "zen_profile_selector.app:main"
+
+[project.urls]
+Homepage = "https://github.com/FedericoGrim/zen-profile-selector"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+zen_profile_selector = ["assets/*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
