@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.1](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.1.0...zen-profile-selector-v0.1.1) (2026-10-16)
+
+
+### Documentation
+
+* add bug report and feature request issue forms ([2dd7a9a](https://github.com/FedericoGrim/zen-profile-selector/commit/2dd7a9a31de3fc3e29d7de0beec105c7e8cebded))
+* add contributing guide ([a8210a5](https://github.com/FedericoGrim/zen-profile-selector/commit/a8210a59bedd76e1fd9e6c2490a42b38323fda71))
+* add contributing guide, code of conduct, security policy and issue forms ([630377a](https://github.com/FedericoGrim/zen-profile-selector/commit/630377a7f9d3cfc1537797a10acc43227508af49))
+* add Contributor Covenant 2.1 code of conduct ([e876b25](https://github.com/FedericoGrim/zen-profile-selector/commit/e876b25dc97cb58734bff8b626c3d773883fa9dd))
+* add pull request template ([644787d](https://github.com/FedericoGrim/zen-profile-selector/commit/644787d15b5a24579038478babed8f48e14139ac))
+* add security policy with private reporting ([a566ba5](https://github.com/FedericoGrim/zen-profile-selector/commit/a566ba51dd2167693b0c243de1962a36de39c68e))
+* link community files and author contact from README ([253ef1d](https://github.com/FedericoGrim/zen-profile-selector/commit/253ef1d2102f1eb27f39767e5f6576a4edb96864))
+* record decision 003 rebase merge for pull requests into develop ([9809cc6](https://github.com/FedericoGrim/zen-profile-selector/commit/9809cc68bc2966b57b2804edb014416d856f6808))
+
 ## 0.1.0 (2026-10-16)
 
 
