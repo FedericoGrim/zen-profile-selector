@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from zen_profile_selector.config import Settings, config_dir, load_settings, save_settings
+from zen_profile_selector.config import Settings, config_dir, load_settings, save_settings, validate_settings
 
 
 def test_config_dir_follows_xdg_config_home(tmp_path):
@@ -36,3 +36,35 @@ def test_settings_round_trip_creates_the_folder(tmp_path):
 def test_profiles_dir_path_is_none_when_empty():
     assert Settings().profiles_dir_path is None
     assert Settings(profiles_dir="~/zen").profiles_dir_path == Path("~/zen").expanduser()
+
+
+def zen_on_path(name):
+    return "/usr/bin/zen" if name == "zen" else None
+
+
+def test_empty_settings_are_valid_because_they_mean_detect():
+    assert validate_settings("", "", which=zen_on_path) is None
+
+
+def test_profiles_dir_must_contain_profiles_ini(tmp_path):
+    assert validate_settings("", str(tmp_path), which=zen_on_path) == "profiles_dir_invalid"
+    (tmp_path / "profiles.ini").write_text("[General]\n")
+    assert validate_settings("", str(tmp_path), which=zen_on_path) is None
+
+
+def test_zen_command_must_exist(tmp_path):
+    assert validate_settings("zen --no-remote", "", which=zen_on_path) is None
+    assert validate_settings("firefox-zen", "", which=zen_on_path) == "zen_command_not_found"
+    assert validate_settings(str(tmp_path / "missing"), "", which=zen_on_path) == "zen_command_not_found"
+
+
+def test_zen_command_with_a_path_must_be_executable(tmp_path):
+    binary = tmp_path / "zen"
+    binary.write_text("#!/bin/sh\n")
+    assert validate_settings(str(binary), "", which=zen_on_path) == "zen_command_not_found"
+    binary.chmod(0o755)
+    assert validate_settings(str(binary), "", which=zen_on_path) is None
+
+
+def test_unbalanced_quotes_are_an_invalid_command():
+    assert validate_settings('zen "--profile', "", which=zen_on_path) == "zen_command_invalid"

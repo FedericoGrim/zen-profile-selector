@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+import os
+import shlex
+import shutil
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
@@ -46,3 +49,23 @@ def load_settings(folder: Path) -> Settings:
 def save_settings(folder: Path, settings: Settings) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     (folder / SETTINGS_FILE).write_text(json.dumps(asdict(settings), indent=2) + "\n", encoding="utf-8")
+
+
+def validate_settings(
+    zen_command: str, profiles_dir: str, which: Callable[[str], str | None] = shutil.which
+) -> str | None:
+    """Translation key of the first problem in the manual settings, None when they are usable."""
+    if profiles_dir and not (Path(profiles_dir).expanduser() / "profiles.ini").is_file():
+        return "profiles_dir_invalid"
+    if zen_command:
+        try:
+            program = shlex.split(zen_command)[0]
+        except (ValueError, IndexError):
+            return "zen_command_invalid"
+        if "/" in program:
+            path = Path(program).expanduser()
+            if not (path.is_file() and os.access(path, os.X_OK)):
+                return "zen_command_not_found"
+        elif which(program) is None:
+            return "zen_command_not_found"
+    return None

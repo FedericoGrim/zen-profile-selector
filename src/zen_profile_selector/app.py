@@ -8,10 +8,11 @@ from collections.abc import Callable
 from dataclasses import replace
 from functools import partial
 from pathlib import Path
+from tkinter import filedialog
 
 import customtkinter as ctk
 
-from .config import Settings, config_dir, load_settings, save_settings
+from .config import Settings, config_dir, load_settings, save_settings, validate_settings
 from .i18n import LANGUAGES, detect_language, translate
 from .layout import grid_columns, primary_monitor
 from .profiles import (
@@ -86,7 +87,18 @@ class ProfileSelector:
             text_color=TEXT,
         )
         language_menu.set(LANGUAGES[self.language])
-        language_menu.pack(side="right")
+        ctk.CTkButton(
+            bar,
+            text="⚙",
+            font=("Arial", 16),
+            width=28,
+            height=28,
+            fg_color=CARD,
+            hover_color=HOVER,
+            text_color=TEXT,
+            command=self.open_settings_dialog,
+        ).pack(side="right")
+        language_menu.pack(side="right", padx=(0, 6))
 
     def detect(self, settings: Settings) -> ZenInstall | None:
         return detect_zen(
@@ -314,6 +326,86 @@ class ProfileSelector:
 
         name_entry.bind("<Return>", lambda event: confirm())
         dialog.after(100, name_entry.focus_set)
+
+    def open_settings_dialog(self) -> None:
+        """Manual Zen command and profiles folder; empty fields mean detect automatically."""
+        dialog = self.open_dialog(self.text("settings_title"))
+        detected = detect_zen(Path.home())
+
+        def field(label_key: str, value: str, placeholder: str) -> ctk.CTkEntry:
+            ctk.CTkLabel(dialog, text=self.text(label_key), text_color=TEXT, anchor="w").pack(
+                fill="x", padx=24, pady=(16, 4)
+            )
+            row = ctk.CTkFrame(dialog, fg_color=BACKGROUND)
+            row.pack(fill="x", padx=24)
+            entry = ctk.CTkEntry(row, placeholder_text=placeholder, width=360)
+            if value:
+                entry.insert(0, value)
+            entry.pack(side="left")
+            return entry
+
+        command_entry = field(
+            "zen_command_label", self.settings.zen_command, " ".join(detected.command) if detected else ""
+        )
+        profiles_entry = field(
+            "profiles_dir_label", self.settings.profiles_dir, str(detected.profiles_dir) if detected else ""
+        )
+
+        def browse() -> None:
+            folder = filedialog.askdirectory(parent=dialog)
+            if folder:
+                profiles_entry.delete(0, "end")
+                profiles_entry.insert(0, folder)
+
+        ctk.CTkButton(
+            profiles_entry.master,
+            text=self.text("browse"),
+            width=90,
+            fg_color=CARD,
+            hover_color=HOVER,
+            command=browse,
+        ).pack(side="left", padx=(6, 0))
+
+        ctk.CTkLabel(dialog, text=self.text("settings_hint"), text_color="#9a9a9a", anchor="w").pack(
+            fill="x", padx=24, pady=(8, 0)
+        )
+
+        def detect_automatically() -> None:
+            for entry in (command_entry, profiles_entry):
+                entry.delete(0, "end")
+            dialog.focus_set()
+
+        ctk.CTkButton(
+            dialog,
+            text=self.text("auto_detect"),
+            fg_color="transparent",
+            hover_color=HOVER,
+            text_color=TEXT,
+            command=detect_automatically,
+        ).pack(anchor="w", padx=18, pady=(4, 0))
+
+        error_label = ctk.CTkLabel(dialog, text="", text_color=ERROR)
+        error_label.pack(padx=24, pady=(8, 0))
+
+        def save() -> None:
+            command, profiles_dir = command_entry.get().strip(), profiles_entry.get().strip()
+            error = validate_settings(command, profiles_dir)
+            if error:
+                error_label.configure(text=self.text(error))
+                return
+            self.settings = replace(self.settings, zen_command=command, profiles_dir=profiles_dir)
+            save_settings(self.settings_dir, self.settings)
+            dialog.destroy()
+            self.build()
+
+        buttons = ctk.CTkFrame(dialog, fg_color=BACKGROUND)
+        buttons.pack(padx=24, pady=(8, 24), fill="x")
+        ctk.CTkButton(
+            buttons, text=self.text("cancel"), fg_color=CARD, hover_color=HOVER, command=dialog.destroy
+        ).pack(side="left", expand=True, padx=(0, 4))
+        ctk.CTkButton(buttons, text=self.text("save"), command=save).pack(
+            side="left", expand=True, padx=(4, 0)
+        )
 
     def open_new_profile_dialog(self) -> None:
         def create(name: str, icon: str) -> str | None:
