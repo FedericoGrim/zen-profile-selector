@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.2](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.1.1...zen-profile-selector-v0.1.2) (2026-10-17)
+
+
+### Documentation
+
+* make README links absolute and recommend installing from PyPI ([a137729](https://github.com/FedericoGrim/zen-profile-selector/commit/a137729f6ac7476c1e62bb56d09ff5a3a431706c))
+* mention PyPI publishing in CLAUDE.md ([b40b4e3](https://github.com/FedericoGrim/zen-profile-selector/commit/b40b4e385203a481e31d74d7eee6759b125afa3b))
+* record decision 004 PyPI trusted publishing ([bee3206](https://github.com/FedericoGrim/zen-profile-selector/commit/bee32067f8363dfddb05fb5a236bce601d442457))
+
 ## [0.1.1](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.1.0...zen-profile-selector-v0.1.1) (2026-10-16)
 
 
