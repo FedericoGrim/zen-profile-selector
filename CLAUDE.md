@@ -7,7 +7,7 @@
 ## Tech stack
 - Python 3.9+ (`from __future__ import annotations` for modern type syntax)
 - customtkinter + tkinter for the UI; standard library for everything else
-- pytest, ruff, mypy, pre-commit, gitleaks; GitHub Actions; release-please (python release type)
+- pytest, ruff, mypy, pre-commit, gitleaks; GitHub Actions; release-please (python release type); releases published to PyPI with trusted publishing (decision 004)
 
 ## Architecture
 Simple layering (no tactical DDD: small tool without complex domain rules).
