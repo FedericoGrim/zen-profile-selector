@@ -27,3 +27,11 @@ Significant decisions for this project. Newest at the bottom. Entries are never 
 - **Decision:** Merge pull requests into `develop` with "Rebase and merge"; keep merge commits only for release (`develop` → `main`) and back-merge (`main` → `develop`) pull requests, whose `chore:` titles are not listed in the changelog. Squash merging is disabled.
 - **Alternatives:** Blank merge commit messages (not allowed by GitHub with merge commits); squash merges (lose the micro commits); non-conventional PR titles (easy to get wrong for contributors).
 - **Consequences:** Each change appears once in the changelog and micro commits stay visible. The 0.1.0 section keeps its duplicates, since the changelog is never edited by hand.
+
+## 004 — Publish releases to PyPI with trusted publishing
+- **Date:** 2026-10-17
+- **Status:** Accepted
+- **Context:** Installing from the Git URL works but gives no download statistics and a longer install command.
+- **Decision:** Every release created by release-please is built from its tag, checked with `twine check`, and uploaded to PyPI as `zen-profile-selector` by the `publish` job in the `pypi` environment, authenticated with PyPI trusted publishing (OIDC). The README recommends `pipx install zen-profile-selector`.
+- **Alternatives:** A PyPI API token stored as a repository secret (a long-lived credential to leak and rotate); keeping Git-only installs (no stats, longer command).
+- **Consequences:** No publishing secret exists in the repository. A version number can be uploaded only once, so a broken upload is fixed with a new patch release.

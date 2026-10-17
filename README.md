@@ -6,7 +6,7 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 
 > **Unofficial project.** Not affiliated with, endorsed by or supported by the Zen Browser team.
 
-![The profile grid](docs/screenshots/profiles.png)
+![The profile grid](https://raw.githubusercontent.com/FedericoGrim/zen-profile-selector/main/docs/screenshots/profiles.png)
 
 ## Features
 
@@ -19,7 +19,7 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 
 | Edit a profile | Settings |
 |---|---|
-| ![Edit profile dialog](docs/screenshots/edit-profile.png) | ![Settings dialog](docs/screenshots/settings.png) |
+| ![Edit profile dialog](https://raw.githubusercontent.com/FedericoGrim/zen-profile-selector/main/docs/screenshots/edit-profile.png) | ![Settings dialog](https://raw.githubusercontent.com/FedericoGrim/zen-profile-selector/main/docs/screenshots/settings.png) |
 
 ## Requirements
 
@@ -32,8 +32,10 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 ## Install
 
 ```bash
-pipx install git+https://github.com/FedericoGrim/zen-profile-selector
+pipx install zen-profile-selector
 ```
+
+To try the latest development version instead, install from GitHub with `pipx install git+https://github.com/FedericoGrim/zen-profile-selector`.
 
 Add it to your applications menu:
 
@@ -41,7 +43,7 @@ Add it to your applications menu:
 zen-profile-selector --install-desktop
 ```
 
-Remove it from the menu with `--uninstall-desktop`, and uninstall it with `pipx uninstall zen-profile-selector`.
+Update with `pipx upgrade zen-profile-selector`. Remove it from the menu with `--uninstall-desktop`, and uninstall it with `pipx uninstall zen-profile-selector`.
 
 ## Configuration
 
@@ -71,9 +73,9 @@ Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deletin
 
 ## Contributing
 
-Contributions are welcome: bug reports, translations, packaging and code. Start with [CONTRIBUTING.md](CONTRIBUTING.md), browse the [roadmap](https://github.com/FedericoGrim/zen-profile-selector/labels/roadmap) and the [`good first issue`](https://github.com/FedericoGrim/zen-profile-selector/labels/good%20first%20issue) label, and ask anything in [Discussions](https://github.com/FedericoGrim/zen-profile-selector/discussions).
+Contributions are welcome: bug reports, translations, packaging and code. Start with [CONTRIBUTING.md](https://github.com/FedericoGrim/zen-profile-selector/blob/main/CONTRIBUTING.md), browse the [roadmap](https://github.com/FedericoGrim/zen-profile-selector/labels/roadmap) and the [`good first issue`](https://github.com/FedericoGrim/zen-profile-selector/labels/good%20first%20issue) label, and ask anything in [Discussions](https://github.com/FedericoGrim/zen-profile-selector/discussions).
 
-Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and report security problems privately as described in [SECURITY.md](SECURITY.md). Design decisions are recorded in [docs/decisions.md](docs/decisions.md).
+Please follow the [Code of Conduct](https://github.com/FedericoGrim/zen-profile-selector/blob/main/CODE_OF_CONDUCT.md) and report security problems privately as described in [SECURITY.md](https://github.com/FedericoGrim/zen-profile-selector/blob/main/SECURITY.md). Design decisions are recorded in [docs/decisions.md](https://github.com/FedericoGrim/zen-profile-selector/blob/main/docs/decisions.md).
 
 ## Author
 
@@ -81,4 +83,4 @@ Made by Federico Grimaldi — federico.grimaldi2006@gmail.com
 
 ## License
 
-[GNU General Public License v3.0 or later](LICENSE).
+[GNU General Public License v3.0 or later](https://github.com/FedericoGrim/zen-profile-selector/blob/main/LICENSE).
