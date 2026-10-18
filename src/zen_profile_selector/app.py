@@ -32,6 +32,7 @@ from .profiles import (
     save_icon,
     validate_profile_name,
 )
+from .version import installed_version
 from .zen import ZenInstall, create_profile_command, detect_zen, launch_command
 
 ASSETS = Path(__file__).with_name("assets")
@@ -402,13 +403,19 @@ class ProfileSelector:
             self.build()
 
         buttons = ctk.CTkFrame(dialog, fg_color=BACKGROUND)
-        buttons.pack(padx=24, pady=(8, 24), fill="x")
+        buttons.pack(padx=24, pady=(8, 12), fill="x")
         ctk.CTkButton(
             buttons, text=self.text("cancel"), fg_color=CARD, hover_color=HOVER, command=dialog.destroy
         ).pack(side="left", expand=True, padx=(0, 4))
         ctk.CTkButton(buttons, text=self.text("save"), command=save).pack(
             side="left", expand=True, padx=(4, 0)
         )
+
+        version = installed_version()
+        if version:
+            ctk.CTkLabel(dialog, text=self.text("version", version=version), text_color="#9a9a9a").pack(
+                pady=(0, 12)
+            )
 
     def open_new_profile_dialog(self) -> None:
         def create(name: str, icon: str) -> str | None:
