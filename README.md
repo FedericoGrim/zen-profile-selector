@@ -38,13 +38,24 @@ pipx install zen-profile-selector
 
 To try the latest development version instead, install from GitHub with `pipx install git+https://github.com/FedericoGrim/zen-profile-selector`.
 
-Add it to your applications menu:
+On Linux, add it to your applications menu:
 
 ```bash
 zen-profile-selector --install-desktop
 ```
 
 Update with `pipx upgrade zen-profile-selector`. Remove it from the menu with `--uninstall-desktop`, and uninstall it with `pipx uninstall zen-profile-selector`.
+
+### Windows (beta)
+
+Install [Python](https://www.python.org/downloads/) from python.org, then in PowerShell:
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+```
+
+Open a new PowerShell window and run `pipx install zen-profile-selector`, then start it with `zen-profile-selector`. There is no Start menu entry yet: a Windows installer is planned.
 
 ## Configuration
 
