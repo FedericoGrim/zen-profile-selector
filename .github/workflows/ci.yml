@@ -44,6 +44,20 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest
 
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: choco install innosetup --yes --no-progress
+      - run: powershell -NoProfile -ExecutionPolicy Bypass -File packaging\windows\build.ps1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-installer
+          path: dist/*.exe
+
   package:
     runs-on: ubuntu-latest
     steps:
