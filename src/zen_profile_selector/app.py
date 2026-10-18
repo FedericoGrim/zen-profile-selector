@@ -17,7 +17,7 @@ from typing import TypeVar
 
 import customtkinter as ctk
 
-from .config import Settings, config_dir, load_settings, save_settings, validate_settings
+from .config import Settings, config_dir, load_settings, save_settings, validate_settings, xdg_config_home
 from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
 from .i18n import LANGUAGES, detect_language, translate
 from .layout import grid_columns, primary_monitor
@@ -235,6 +235,7 @@ class ProfileSelector:
             Path.home(),
             command=settings.zen_command or None,
             profiles_dir=settings.profiles_dir_path,
+            config_home=xdg_config_home(os.environ, Path.home()),
         )
 
     def build(self) -> None:
@@ -461,7 +462,7 @@ class ProfileSelector:
     def open_settings_dialog(self) -> None:
         """Manual Zen command and profiles folder; empty fields mean detect automatically."""
         dialog = self.open_dialog(self.text("settings_title"))
-        detected = detect_zen(Path.home())
+        detected = self.detect(Settings())
 
         def field(label_key: str, value: str, placeholder: str) -> ctk.CTkEntry:
             ctk.CTkLabel(dialog, text=self.text(label_key), text_color=TEXT, anchor="w").pack(
