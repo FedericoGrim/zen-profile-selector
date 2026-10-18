@@ -13,13 +13,14 @@ from datetime import date
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import customtkinter as ctk
 from send2trash import send2trash
 
 from .config import Settings, config_dir, load_settings, save_settings, validate_settings, xdg_config_home
 from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
+from .emoji import emoji_image
 from .i18n import LANGUAGES, detect_language, translate
 from .layout import grid_columns, primary_monitor
 from .profiles import (
@@ -89,6 +90,16 @@ class ProfileSelector:
         """CustomTkinter puts its own icon on Windows title bars unless iconbitmap gets an .ico file."""
         if sys.platform == "win32":
             window.iconbitmap(ASSETS / "icon.ico")
+
+    @staticmethod
+    def emoji_options(emoji: str, font_size: int, image_size: int) -> dict[str, Any]:
+        """Widget options showing an emoji: as text, or on Windows as a color image fitted in image_size."""
+        image = emoji_image(emoji, image_size * 2) if sys.platform == "win32" else None
+        if image is None:
+            return {"text": emoji, "font": ("Arial", font_size)}
+        scale = image_size / max(image.size)
+        size = (round(image.width * scale), round(image.height * scale))
+        return {"text": "", "image": ctk.CTkImage(light_image=image, dark_image=image, size=size)}
 
     def text(self, key: str, **values: str) -> str:
         return translate(self.language, key, **values)
@@ -350,7 +361,8 @@ class ProfileSelector:
 
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.place(relx=0.5, rely=0.5, anchor="center")
-        icon_label = ctk.CTkLabel(content, text=icon, font=("Arial", 40))
+        icon_options = self.emoji_options(icon, 40, 48) if on_edit else {"text": icon, "font": ("Arial", 40)}
+        icon_label = ctk.CTkLabel(content, **icon_options)
         icon_label.pack(pady=(10, 5))
         name_label = ctk.CTkLabel(content, text=label, font=("Arial", 13, "bold"), text_color=TEXT)
         name_label.pack()
@@ -449,8 +461,7 @@ class ProfileSelector:
         for index, choice in enumerate(choices):
             button = ctk.CTkButton(
                 icons_frame,
-                text=choice,
-                font=("Arial", 22),
+                **self.emoji_options(choice, 22, 26),
                 width=44,
                 height=44,
                 fg_color=CARD,
