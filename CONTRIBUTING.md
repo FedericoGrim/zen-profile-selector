@@ -14,7 +14,7 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Development setup (5 minutes)
 
-You need Linux, Python 3.9+ with Tk (`sudo apt install python3-tk` on Debian, Ubuntu and Mint) and Git. Zen Browser is only needed to try the app by hand.
+You need Linux or Windows, Python 3.9+ with Tk (`sudo apt install python3-tk` on Debian, Ubuntu and Mint; the python.org installer includes it on Windows) and Git. On Windows, use `.venv\Scripts\` instead of `.venv/bin/` in the commands below. Zen Browser is only needed to try the app by hand.
 
 ```bash
 git clone https://github.com/FedericoGrim/zen-profile-selector.git

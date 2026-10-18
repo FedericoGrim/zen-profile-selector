@@ -13,13 +13,15 @@ from datetime import date
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import customtkinter as ctk
+from send2trash import send2trash
 
 from .config import Settings, config_dir, load_settings, save_settings, validate_settings, xdg_config_home
 from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
-from .i18n import LANGUAGES, detect_language, translate
+from .emoji import emoji_image
+from .i18n import LANGUAGES, detect_language, translate, windows_display_locale
 from .layout import grid_columns, primary_monitor
 from .profiles import (
     DEFAULT_ICON,
@@ -34,6 +36,7 @@ from .profiles import (
     rename_profile,
     save_icon,
     validate_profile_name,
+    wait_for_profile,
 )
 from .version import (
     UPGRADE_COMMAND,
@@ -65,7 +68,7 @@ class ProfileSelector:
         self.settings_dir = settings_dir
         self.icons_file = settings_dir / ICONS_FILE_NAME
         self.settings = load_settings(settings_dir)
-        self.language = self.settings.language or detect_language(os.environ)
+        self.language = self.settings.language or detect_language(os.environ, windows_display_locale())
         self.install: ZenInstall | None = None
         self.profiles: dict[str, str] = {}
         self.version = installed_version()
@@ -77,9 +80,25 @@ class ProfileSelector:
         self.root.configure(fg_color=BACKGROUND)
         self.logo = tk.PhotoImage(file=ASSETS / "icon-header.png")
         self.root.iconphoto(True, self.logo)
+        self.set_windows_icon(self.root)
 
         self.build()
         self.start_update_check()
+
+    @staticmethod
+    def set_windows_icon(window: ctk.CTk | ctk.CTkToplevel) -> None:
+        """CustomTkinter puts its own icon on Windows title bars unless iconbitmap gets an .ico file."""
+        if sys.platform == "win32":
+            window.iconbitmap(ASSETS / "icon.ico")
+
+    @staticmethod
+    def emoji_options(emoji: str, font_size: int, image_size: int) -> dict[str, Any]:
+        """Widget options showing an emoji: as text, or on Windows as an image_size color square."""
+        image = emoji_image(emoji, image_size * 2) if sys.platform == "win32" else None
+        if image is None:
+            return {"text": emoji, "font": ("Arial", font_size)}
+        size = (image_size, image_size)
+        return {"text": "", "image": ctk.CTkImage(light_image=image, dark_image=image, size=size)}
 
     def text(self, key: str, **values: str) -> str:
         return translate(self.language, key, **values)
@@ -190,7 +209,13 @@ class ProfileSelector:
         self.run_in_background(upgrade, done)
 
     def restart(self) -> None:
-        os.execv(sys.executable, [sys.executable, "-m", "zen_profile_selector"])
+        command = [sys.executable, "-m", "zen_profile_selector"]
+        if sys.platform == "win32":
+            # os.execv on Windows starts a new process and returns, leaving both windows open
+            subprocess.Popen(command)
+            self.root.quit()
+        else:
+            os.execv(sys.executable, command)
 
     def run_in_background(self, work: Callable[[], T], on_done: Callable[[T], None]) -> None:
         """Run work in a thread and hand its result to on_done in the Tk main loop."""
@@ -335,53 +360,74 @@ class ProfileSelector:
 
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.place(relx=0.5, rely=0.5, anchor="center")
-        icon_label = ctk.CTkLabel(content, text=icon, font=("Arial", 40))
+        icon_options = self.emoji_options(icon, 40, 56) if on_edit else {"text": icon, "font": ("Arial", 40)}
+        icon_label = ctk.CTkLabel(content, **icon_options)
         icon_label.pack(pady=(10, 5))
         name_label = ctk.CTkLabel(content, text=label, font=("Arial", 13, "bold"), text_color=TEXT)
         name_label.pack()
 
-        # Icon and name sit on top of the button: forward clicks and hover to the card
-        for widget in (content, icon_label, name_label):
-            widget.bind("<ButtonRelease-1>", lambda event: command())
-            widget.bind("<Enter>", lambda event: card._on_enter())
-
-        if on_edit is None:
-            return
-
-        edit_button = ctk.CTkButton(
-            card,
-            text="✎",
-            font=("Arial", 14),
-            width=26,
-            height=26,
-            fg_color=HOVER,
-            bg_color=HOVER,
-            hover_color="#4a4a4a",
-            text_color=TEXT,
-            corner_radius=6,
-            command=on_edit,
+        inner = (content, icon_label, name_label)
+        edit_button = (
+            None
+            if on_edit is None
+            else ctk.CTkButton(
+                card,
+                text="✎",
+                font=("Arial", 14),
+                width=26,
+                height=26,
+                fg_color=HOVER,
+                bg_color=HOVER,
+                hover_color="#4a4a4a",
+                text_color=TEXT,
+                corner_radius=6,
+                command=on_edit,
+            )
         )
 
-        def show_edit(event: tk.Event | None = None) -> None:
-            edit_button.place(relx=1, x=-6, y=6, anchor="ne")
+        def highlight(event: tk.Event | None = None) -> None:
+            # The icon and name keep their own background: repaint them with the card's hover color
+            card._on_enter()
+            for widget in inner:
+                widget.configure(fg_color=HOVER, bg_color=HOVER)
+            if edit_button:
+                edit_button.place(relx=1, x=-6, y=6, anchor="ne")
 
-        def hide_edit_if_outside() -> None:
-            # Leave also fires over the inner labels: hide only once the pointer has left the card
+        def unhighlight_if_outside() -> None:
+            # Leave also fires over the inner labels: reset only once the pointer has left the card
             pointer = card.winfo_containing(*card.winfo_pointerxy())
-            if not pointer or not str(pointer).startswith(str(card)):
+            if pointer and str(pointer).startswith(str(card)):
+                return
+            card._on_leave()
+            for widget in inner:
+                widget.configure(fg_color=CARD, bg_color=CARD)
+            if edit_button:
                 edit_button.place_forget()
 
-        for widget in (card, content, icon_label, name_label):
-            widget.bind("<Enter>", show_edit, add="+")
-            widget.bind("<Leave>", lambda event: card.after(50, hide_edit_if_outside), add="+")
+        # Icon and name sit on top of the button: forward clicks to the card
+        for widget in inner:
+            widget.bind("<ButtonRelease-1>", lambda event: command())
+        for widget in (card, *inner):
+            widget.bind("<Enter>", highlight, add="+")
+            widget.bind("<Leave>", lambda event: card.after(50, unhighlight_if_outside), add="+")
 
-    def open_dialog(self, title: str) -> ctk.CTkToplevel:
-        dialog = ctk.CTkToplevel(self.root, fg_color=BACKGROUND)
+    def open_dialog(self, title: str, owner: ctk.CTk | ctk.CTkToplevel | None = None) -> ctk.CTkToplevel:
+        """Modal dialog over its owner (the main window unless another dialog opens it)."""
+        owner = owner or self.root
+        dialog = ctk.CTkToplevel(owner, fg_color=BACKGROUND)
         dialog.title(title)
         dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.geometry(f"+{self.root.winfo_rootx() + 40}+{self.root.winfo_rooty() + 40}")
-        dialog.after(100, dialog.grab_set)
+        dialog.transient(owner)
+        dialog.geometry(f"+{owner.winfo_rootx() + 40}+{owner.winfo_rooty() + 40}")
+        self.set_windows_icon(dialog)
+
+        def take_focus() -> None:
+            # On Windows a dialog opened from another one can end up behind it
+            dialog.lift()
+            dialog.focus_force()
+            dialog.grab_set()
+
+        dialog.after(100, take_focus)
         return dialog
 
     def open_profile_dialog(
@@ -414,8 +460,7 @@ class ProfileSelector:
         for index, choice in enumerate(choices):
             button = ctk.CTkButton(
                 icons_frame,
-                text=choice,
-                font=("Arial", 22),
+                **self.emoji_options(choice, 22, 30),
                 width=44,
                 height=44,
                 fg_color=CARD,
@@ -582,7 +627,7 @@ class ProfileSelector:
 
     def open_delete_dialog(self, name: str, edit_dialog: ctk.CTkToplevel) -> None:
         """Confirm the deletion by typing the profile name."""
-        dialog = self.open_dialog(self.text("delete_title"))
+        dialog = self.open_dialog(self.text("delete_title"), owner=edit_dialog)
 
         ctk.CTkLabel(
             dialog,
@@ -641,12 +686,11 @@ class ProfileSelector:
         """Create the profile through Zen; returns an error key or None."""
         assert self.install is not None
         try:
-            result = subprocess.run(
-                create_profile_command(self.install, name), capture_output=True, timeout=60
-            )
+            subprocess.run(create_profile_command(self.install, name), capture_output=True, timeout=60)
         except (OSError, subprocess.TimeoutExpired):
             return "zen_start_failed"
-        if result.returncode != 0 or name not in read_profiles(self.install.profiles_dir):
+        # The exit code is not checked: Zen may hand the work to a relaunched copy of itself
+        if not wait_for_profile(self.install.profiles_dir, name):
             return "create_failed"
         save_icon(self.icons_file, name, icon)
         return None
@@ -661,9 +705,9 @@ class ProfileSelector:
         except ValueError as error:
             return str(error)
         if profile_dir.exists():
-            if shutil.which("gio") is None:
-                return "trash_unavailable"
-            if subprocess.run(["gio", "trash", str(profile_dir)], capture_output=True).returncode != 0:
+            try:
+                send2trash(profile_dir)
+            except OSError:
                 return "trash_failed"
         self.write_profiles_ini(new_ini)
         remove_icon(self.icons_file, name)
@@ -686,6 +730,8 @@ def main() -> None:
         "--uninstall-desktop", action="store_true", help="remove it from the applications menu"
     )
     args = parser.parse_args()
+    if (args.install_desktop or args.uninstall_desktop) and sys.platform != "linux":
+        parser.error("the applications menu entry is only supported on Linux")
 
     target = desktop_file(os.environ, Path.home())
     if args.install_desktop:

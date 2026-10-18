@@ -1,4 +1,7 @@
+import sys
 from pathlib import Path
+
+import pytest
 
 from zen_profile_selector.desktop import (
     desktop_entry,
@@ -6,6 +9,8 @@ from zen_profile_selector.desktop import (
     install_desktop_entry,
     uninstall_desktop_entry,
 )
+
+pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="the menu entry is Linux only")
 
 
 def test_desktop_file_follows_xdg_data_home(tmp_path):

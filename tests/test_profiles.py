@@ -16,6 +16,7 @@ from zen_profile_selector.profiles import (
     rename_profile,
     save_icon,
     validate_profile_name,
+    wait_for_profile,
 )
 
 PROFILES_INI = """[General]
@@ -143,6 +144,7 @@ def test_last_profile_cannot_be_removed():
         remove_profile(ini, "Gaming")
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Zen uses parent.lock on Windows")
 def test_profile_in_use_follows_zen_lock(tmp_path):
     assert not profile_in_use(tmp_path)
     (tmp_path / ".parentlock").touch()
@@ -165,3 +167,41 @@ def test_profile_in_use_follows_zen_lock(tmp_path):
         holder.kill()
         holder.wait()
     assert not profile_in_use(tmp_path)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows file sharing")
+def test_profile_in_use_follows_zen_lock_on_windows(tmp_path):
+    import _winapi
+
+    assert not profile_in_use(tmp_path)
+    lock = tmp_path / "parent.lock"
+    lock.touch()
+    assert not profile_in_use(tmp_path)
+    # Zen opens parent.lock without sharing while the profile is running
+    handle = _winapi.CreateFile(str(lock), _winapi.GENERIC_WRITE, 0, 0, _winapi.OPEN_EXISTING, 0, 0)
+    try:
+        assert profile_in_use(tmp_path)
+    finally:
+        _winapi.CloseHandle(handle)
+    assert not profile_in_use(tmp_path)
+
+
+def test_wait_for_profile_returns_once_zen_has_written_it(tmp_path):
+    ini = tmp_path / "profiles.ini"
+    ini.write_text("[General]\n")
+    waits = []
+
+    def zen_writes_while_we_wait(seconds):
+        waits.append(seconds)
+        ini.write_text("[Profile0]\nName=Work\nIsRelative=1\nPath=Profiles/x.Work\n")
+
+    assert wait_for_profile(tmp_path, "Work", sleep=zen_writes_while_we_wait)
+    assert len(waits) == 1
+
+
+def test_wait_for_profile_gives_up_after_the_timeout(tmp_path):
+    (tmp_path / "profiles.ini").write_text("[General]\n")
+    clock = iter(range(100))
+    assert not wait_for_profile(
+        tmp_path, "Work", timeout=5, sleep=lambda seconds: None, clock=lambda: next(clock)
+    )

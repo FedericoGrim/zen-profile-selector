@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import fcntl
 import io
 import json
 import os
-from collections.abc import Iterable
+import sys
+import time
+from collections.abc import Callable, Iterable
 from configparser import ConfigParser, SectionProxy
 from pathlib import Path
 
@@ -48,6 +49,23 @@ def read_profiles(profiles_dir: Path) -> dict[str, str]:
         if name and path:
             profiles[name] = path if section.get("IsRelative") == "0" else str(profiles_dir / path)
     return dict(sorted(profiles.items(), key=lambda item: item[0].casefold()))
+
+
+def wait_for_profile(
+    profiles_dir: Path,
+    name: str,
+    timeout: float = 5,
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> bool:
+    """True once the profile is in profiles.ini. Zen can write it after its command returns, e.g. on
+    Windows when it relaunches itself without administrator rights."""
+    deadline = clock() + timeout
+    while name not in read_profiles(profiles_dir):
+        if clock() >= deadline:
+            return False
+        sleep(0.25)
+    return True
 
 
 def validate_profile_name(name: str, existing_names: Iterable[str]) -> str | None:
@@ -97,7 +115,18 @@ def remove_profile(ini_text: str, name: str) -> str:
 
 
 def profile_in_use(profile_dir: Path) -> bool:
-    """Zen holds a lock on .parentlock while the profile is open."""
+    """Zen locks .parentlock while the profile is open; on Windows it holds parent.lock open, unshared."""
+    if sys.platform == "win32":
+        try:
+            os.close(os.open(profile_dir / "parent.lock", os.O_WRONLY))
+        except FileNotFoundError:
+            return False
+        except PermissionError:
+            return True
+        return False
+
+    import fcntl
+
     try:
         lock_fd = os.open(profile_dir / ".parentlock", os.O_WRONLY)
     except FileNotFoundError:

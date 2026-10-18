@@ -24,11 +24,11 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 
 ## Requirements
 
-- Linux with X11 or XWayland
-- Python 3.9 or newer, with Tk (`sudo apt install python3-tk` on Debian, Ubuntu and Mint)
+- Linux with X11 or XWayland, or Windows 10/11 (Windows support is in beta)
+- Python 3.9 or newer, with Tk (`sudo apt install python3-tk` on Debian, Ubuntu and Mint; included in the python.org installer for Windows)
 - [pipx](https://pipx.pypa.io)
 - Zen Browser
-- Optional: `gio` (to move deleted profiles to the Trash) and `xrandr` (to center the window on the primary monitor). Both ship with most desktops.
+- Optional on Linux: `xrandr`, to center the window on the primary monitor. It ships with most desktops.
 
 ## Install
 
@@ -38,13 +38,24 @@ pipx install zen-profile-selector
 
 To try the latest development version instead, install from GitHub with `pipx install git+https://github.com/FedericoGrim/zen-profile-selector`.
 
-Add it to your applications menu:
+On Linux, add it to your applications menu:
 
 ```bash
 zen-profile-selector --install-desktop
 ```
 
 Update with `pipx upgrade zen-profile-selector`. Remove it from the menu with `--uninstall-desktop`, and uninstall it with `pipx uninstall zen-profile-selector`.
+
+### Windows (beta)
+
+Install [Python](https://www.python.org/downloads/) from python.org, then in PowerShell:
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+```
+
+Open a new PowerShell window and run `pipx install zen-profile-selector`, then start it with `zen-profile-selector`. There is no Start menu entry yet: a Windows installer is planned.
 
 ## Configuration
 
@@ -68,14 +79,15 @@ The selector reads Zen's `profiles.ini` from the detected profiles folder:
 
 - Flatpak: `~/.var/app/app.zen_browser.zen/.zen`, or `~/.var/app/app.zen_browser.zen/config/zen` on installs that follow the XDG layout
 - Native: `~/.zen`, or `~/.config/zen` (`$XDG_CONFIG_HOME/zen`) on installs made with Zen 1.18.6b or newer
+- Windows: `%APPDATA%\zen`, with `zen.exe` found on the `PATH`, in `%ProgramFiles%\Zen Browser` or in `%LOCALAPPDATA%\Zen Browser`
 
-Like Zen itself, it keeps using the old `.zen` folder while it exists.
+On Linux, like Zen itself, it keeps using the old `.zen` folder while it exists. On Windows its own settings live in `%APPDATA%\zen-profile-selector`.
 
 Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deleting edit `profiles.ini` directly, because Zen has no command for them; the previous version is kept as `profiles.ini.selector-bak`. In that case the selector keeps the `[ProfileN]` sections numbered without gaps (Zen stops reading at the first gap), and moves the default profile to another one if needed.
 
 ## Limitations
 
-- Linux only. Windows and macOS are not supported.
+- Windows support is in beta, and `--install-desktop` is Linux only. macOS is not supported yet.
 - On native Wayland, Tk cannot choose where the window opens, so centering depends on your window manager.
 - Zen's newer experimental profile system ("Profile Groups") is not supported. Zen currently keeps it disabled.
 
