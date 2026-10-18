@@ -56,3 +56,34 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@v1.14.2
+
+  back-merge:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Open the back-merge pull request and merge it once CI passes
+        run: |
+          version="${TAG##*-v}"
+          branch="chore/back-merge-$version"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git merge --no-edit origin/develop
+          git push origin "$branch"
+          gh pr create --base develop --head "$branch" \
+            --title "chore: back-merge release $version into develop" \
+            --body "Brings the $version release commit (version bump and CHANGELOG) from \`main\` back into \`develop\`. Opened by the release workflow and merged automatically with a merge commit once CI passes."
+          gh pr merge "$branch" --auto --merge
+          gh workflow run ci.yml --ref "$branch"

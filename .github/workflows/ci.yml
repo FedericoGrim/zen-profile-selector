@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
     branches: [develop, main]
+  # Run by the release workflow on the back-merge branch: pull requests opened by the
+  # GitHub Actions bot wait for a manual approval before their pull_request runs start.
+  workflow_dispatch:
 
 permissions:
   contents: read
