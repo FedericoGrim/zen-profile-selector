@@ -48,14 +48,18 @@ Update with `pipx upgrade zen-profile-selector`. Remove it from the menu with `-
 
 ### Windows (beta)
 
-Install [Python](https://www.python.org/downloads/) from python.org, then in PowerShell:
+Download `zen-profile-selector-setup-X.Y.Z.exe` from the [latest release](https://github.com/FedericoGrim/zen-profile-selector/releases/latest) and run it. It needs no administrator rights and no Python: it installs for your user only and adds **Zen Profile Selector** to the Start menu. Uninstall it from **Settings → Apps**; your profiles and the selector's settings are kept.
+
+The installer is not code-signed yet, so Windows may show "Windows protected your PC": click **More info**, then **Run anyway**. When a new version is out, the selector shows a **Download** button that opens the release page.
+
+If you prefer pipx, install [Python](https://www.python.org/downloads/) from python.org, then in PowerShell:
 
 ```powershell
 py -m pip install --user pipx
 py -m pipx ensurepath
 ```
 
-Open a new PowerShell window and run `pipx install zen-profile-selector`, then start it with `zen-profile-selector`. There is no Start menu entry yet: a Windows installer is planned.
+Open a new PowerShell window and run `pipx install zen-profile-selector`, then start it with `zen-profile-selector` (pipx adds no Start menu entry).
 
 ## Configuration
 
@@ -87,7 +91,7 @@ Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deletin
 
 ## Limitations
 
-- Windows support is in beta, and `--install-desktop` is Linux only. macOS is not supported yet.
+- Windows support is in beta and the installer is not code-signed yet. `--install-desktop` is Linux only (the Windows installer adds the Start menu entry). macOS is not supported yet.
 - On native Wayland, Tk cannot choose where the window opens, so centering depends on your window manager.
 - Zen's newer experimental profile system ("Profile Groups") is not supported. Zen currently keeps it disabled.
 
