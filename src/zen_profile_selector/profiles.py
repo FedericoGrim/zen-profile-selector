@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import fcntl
 import io
 import json
 import os
+import sys
 from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 from pathlib import Path
@@ -97,7 +97,18 @@ def remove_profile(ini_text: str, name: str) -> str:
 
 
 def profile_in_use(profile_dir: Path) -> bool:
-    """Zen holds a lock on .parentlock while the profile is open."""
+    """Zen locks .parentlock while the profile is open; on Windows it holds parent.lock open, unshared."""
+    if sys.platform == "win32":
+        try:
+            os.close(os.open(profile_dir / "parent.lock", os.O_WRONLY))
+        except FileNotFoundError:
+            return False
+        except PermissionError:
+            return True
+        return False
+
+    import fcntl
+
     try:
         lock_fd = os.open(profile_dir / ".parentlock", os.O_WRONLY)
     except FileNotFoundError:
