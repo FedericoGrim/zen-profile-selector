@@ -66,8 +66,10 @@ The selector sends no data about you. Its only network request is the update che
 
 The selector reads Zen's `profiles.ini` from the detected profiles folder:
 
-- Flatpak: `~/.var/app/app.zen_browser.zen/.zen`
-- Native: `~/.zen`
+- Flatpak: `~/.var/app/app.zen_browser.zen/.zen`, or `~/.var/app/app.zen_browser.zen/config/zen` on installs that follow the XDG layout
+- Native: `~/.zen`, or `~/.config/zen` (`$XDG_CONFIG_HOME/zen`) on installs made with Zen 1.18.6b or newer
+
+Like Zen itself, it keeps using the old `.zen` folder while it exists.
 
 Creating a profile is delegated to Zen (`--CreateProfile`). Renaming and deleting edit `profiles.ini` directly, because Zen has no command for them; the previous version is kept as `profiles.ini.selector-bak`. In that case the selector keeps the `[ProfileN]` sections numbered without gaps (Zen stops reading at the first gap), and moves the default profile to another one if needed.
 

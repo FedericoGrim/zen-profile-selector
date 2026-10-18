@@ -25,20 +25,29 @@ def flatpak_zen_installed() -> bool:
     return result.returncode == 0
 
 
+def zen_profiles_dir(legacy: Path, xdg: Path) -> Path:
+    """Zen's own rule: it keeps the old ~/.zen folder while it exists, new installs use the XDG one."""
+    return legacy if legacy.is_dir() else xdg
+
+
 def detect_zen(
     home: Path,
     which: Callable[[str], str | None] = shutil.which,
     flatpak_installed: Callable[[], bool] = flatpak_zen_installed,
     command: str | None = None,
     profiles_dir: Path | None = None,
+    config_home: Path | None = None,
 ) -> ZenInstall | None:
     """Find Zen: Flatpak first, then a native binary; manual settings override what is detected."""
     candidates = []
     if flatpak_installed():
-        candidates.append(ZenInstall(("flatpak", "run", FLATPAK_ID), home / ".var/app" / FLATPAK_ID / ".zen"))
+        sandbox = home / ".var/app" / FLATPAK_ID
+        profiles = zen_profiles_dir(sandbox / ".zen", sandbox / "config/zen")
+        candidates.append(ZenInstall(("flatpak", "run", FLATPAK_ID), profiles))
     native = next((path for path in map(which, NATIVE_BINARIES) if path), None)
     if native:
-        candidates.append(ZenInstall((native,), home / ".zen"))
+        xdg = (config_home or home / ".config") / "zen"
+        candidates.append(ZenInstall((native,), zen_profiles_dir(home / ".zen", xdg)))
 
     detected = next(
         (install for install in candidates if (install.profiles_dir / "profiles.ini").exists()),

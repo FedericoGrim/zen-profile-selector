@@ -25,9 +25,12 @@ class Settings:
         return Path(self.profiles_dir).expanduser() if self.profiles_dir else None
 
 
+def xdg_config_home(env: Mapping[str, str], home: Path) -> Path:
+    return Path(env.get("XDG_CONFIG_HOME") or home / ".config")
+
+
 def config_dir(env: Mapping[str, str], home: Path) -> Path:
-    base = env.get("XDG_CONFIG_HOME") or home / ".config"
-    return Path(base) / APP_NAME
+    return xdg_config_home(env, home) / APP_NAME
 
 
 def load_settings(folder: Path) -> Settings:
