@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.3.0...zen-profile-selector-v0.4.0) (2026-10-18)
+
+
+### Features
+
+* Windows installer ([c951621](https://github.com/FedericoGrim/zen-profile-selector/commit/c9516213779136541e7731c1d82a0c97e136bdb3)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+
 ## [0.3.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.2.1...zen-profile-selector-v0.3.0) (2026-10-18)
 
 
