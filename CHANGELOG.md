@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.1.2...zen-profile-selector-v0.2.0) (2026-10-18)
+
+
+### Features
+
+* **app:** notify when a new version is available ([5c92ca7](https://github.com/FedericoGrim/zen-profile-selector/commit/5c92ca77a20cba3471fce080c1b78876b64797a9)), closes [#42](https://github.com/FedericoGrim/zen-profile-selector/issues/42)
+* **app:** show the installed version in Settings ([d0699ef](https://github.com/FedericoGrim/zen-profile-selector/commit/d0699efb14c65ed0bc092422a89bcd52c54e35df)), closes [#41](https://github.com/FedericoGrim/zen-profile-selector/issues/41)
+* **app:** update with one click from the banner ([cf84dda](https://github.com/FedericoGrim/zen-profile-selector/commit/cf84dda6c5807aaf21139dbc3a77410c66a94b62))
+
 ## [0.1.2](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.1.1...zen-profile-selector-v0.1.2) (2026-10-17)
 
 
