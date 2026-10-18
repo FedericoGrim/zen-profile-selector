@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.2.0...zen-profile-selector-v0.2.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **zen:** find profiles in the XDG config folder ([ed81275](https://github.com/FedericoGrim/zen-profile-selector/commit/ed81275543ced9b53584547497a277d62be01d74)), closes [#53](https://github.com/FedericoGrim/zen-profile-selector/issues/53)
+
 ## [0.2.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.1.2...zen-profile-selector-v0.2.0) (2026-10-18)
 
 
