@@ -32,6 +32,10 @@ Check that everything works:
 .venv/bin/zen-profile-selector
 ```
 
+### Windows installer
+
+`packaging/windows/build.ps1` builds `dist\zen-profile-selector-setup-X.Y.Z.exe` with PyInstaller and [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`). CI builds it on every pull request and attaches it to every release.
+
 ## Project layout
 
 | Module | Responsibility |

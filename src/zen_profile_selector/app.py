@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
+import webbrowser
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import date
@@ -39,11 +40,13 @@ from .profiles import (
     wait_for_profile,
 )
 from .version import (
+    RELEASES_URL,
     UPGRADE_COMMAND,
     fetch_latest_version,
     installed_version,
     load_update_state,
     pipx_upgrade_command,
+    restart_command,
     save_update_state,
     update_check_due,
     version_to_announce,
@@ -51,6 +54,8 @@ from .version import (
 from .zen import ZenInstall, create_profile_command, detect_zen, launch_command
 
 ASSETS = Path(__file__).with_name("assets")
+# True in the Windows build made with PyInstaller
+FROZEN = getattr(sys, "frozen", False)
 T = TypeVar("T")
 ICONS_FILE_NAME = "profile_icons.json"
 
@@ -165,7 +170,11 @@ class ProfileSelector:
         )
         action = ctk.CTkButton(banner, width=110, height=28, fg_color=HOVER, hover_color="#4a4a4a")
         upgrade = pipx_upgrade_command(sys.executable)
-        if upgrade:
+        if FROZEN:
+            # The Windows build is updated by downloading the new installer
+            message.configure(text=self.text("update_ready", version=version))
+            action.configure(text=self.text("download"), command=partial(webbrowser.open, RELEASES_URL))
+        elif upgrade:
             message.configure(text=self.text("update_ready", version=version))
             action.configure(
                 text=self.text("update"), command=partial(self.run_upgrade, upgrade, version, message, action)
@@ -209,13 +218,13 @@ class ProfileSelector:
         self.run_in_background(upgrade, done)
 
     def restart(self) -> None:
-        command = [sys.executable, "-m", "zen_profile_selector"]
+        command = restart_command(sys.executable, FROZEN)
         if sys.platform == "win32":
             # os.execv on Windows starts a new process and returns, leaving both windows open
             subprocess.Popen(command)
             self.root.quit()
         else:
-            os.execv(sys.executable, command)
+            os.execv(command[0], command)
 
     def run_in_background(self, work: Callable[[], T], on_done: Callable[[T], None]) -> None:
         """Run work in a thread and hand its result to on_done in the Tk main loop."""
