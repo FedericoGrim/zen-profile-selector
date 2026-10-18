@@ -13,5 +13,5 @@ def test_missing_font_or_pillow_gives_no_image():
 def test_windows_emoji_are_rendered_in_color():
     image = emoji_image("💼", 32, font_file=WINDOWS_EMOJI_FONT)
     assert image is not None
-    colors = {pixel[:3] for pixel in image.getdata() if pixel[3]}
+    colors = {color[:3] for _, color in image.getcolors(image.width * image.height) if color[3]}
     assert len(colors) > 10
