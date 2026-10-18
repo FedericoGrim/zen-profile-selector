@@ -35,6 +35,7 @@ from .profiles import (
     rename_profile,
     save_icon,
     validate_profile_name,
+    wait_for_profile,
 )
 from .version import (
     UPGRADE_COMMAND,
@@ -648,12 +649,11 @@ class ProfileSelector:
         """Create the profile through Zen; returns an error key or None."""
         assert self.install is not None
         try:
-            result = subprocess.run(
-                create_profile_command(self.install, name), capture_output=True, timeout=60
-            )
+            subprocess.run(create_profile_command(self.install, name), capture_output=True, timeout=60)
         except (OSError, subprocess.TimeoutExpired):
             return "zen_start_failed"
-        if result.returncode != 0 or name not in read_profiles(self.install.profiles_dir):
+        # The exit code is not checked: Zen may hand the work to a relaunched copy of itself
+        if not wait_for_profile(self.install.profiles_dir, name):
             return "create_failed"
         save_icon(self.icons_file, name, icon)
         return None
