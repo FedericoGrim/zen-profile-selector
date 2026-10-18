@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.2.1...zen-profile-selector-v0.3.0) (2026-10-18)
+
+
+### Features
+
+* **app:** color emoji icons on Windows ([7d375b8](https://github.com/FedericoGrim/zen-profile-selector/commit/7d375b8ae6c5f87990d1410fdf06e22774e8507a)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+* **profiles:** profile lock, Recycle Bin and restart on Windows ([98b6f37](https://github.com/FedericoGrim/zen-profile-selector/commit/98b6f372c4bd8cf0add4c4c798ee63ed3e31caa8)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+* **zen:** detect Zen and store settings on Windows ([8a099da](https://github.com/FedericoGrim/zen-profile-selector/commit/8a099dada4cf120c4ac36600bbc57384715b6b10)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+
+
+### Bug Fixes
+
+* **app:** line up Windows emoji icons in fixed squares ([b07f6de](https://github.com/FedericoGrim/zen-profile-selector/commit/b07f6dedfd537e2553ca2052127b2b27e4d1d681))
+* **app:** wait for Zen to write a new profile ([30b7f78](https://github.com/FedericoGrim/zen-profile-selector/commit/30b7f7839841e3f991b270022dbf206f4f748a4e)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+* **app:** Windows title bar icon, card hover and nested dialogs ([885291a](https://github.com/FedericoGrim/zen-profile-selector/commit/885291a43e596a81a451ab5ab94e5215824b1898)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+* **i18n:** use the Windows display language ([4f13fee](https://github.com/FedericoGrim/zen-profile-selector/commit/4f13fee5cff774cae200e4284972365dacca3ca6)), closes [#24](https://github.com/FedericoGrim/zen-profile-selector/issues/24)
+
+
+### Documentation
+
+* explain how to install on Windows with pipx ([346510f](https://github.com/FedericoGrim/zen-profile-selector/commit/346510f16b3110a81c85698bd896a1ed5b965ccb))
+
 ## [0.2.1](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.2.0...zen-profile-selector-v0.2.1) (2026-10-18)
 
 
