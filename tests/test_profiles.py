@@ -143,6 +143,7 @@ def test_last_profile_cannot_be_removed():
         remove_profile(ini, "Gaming")
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Zen uses parent.lock on Windows")
 def test_profile_in_use_follows_zen_lock(tmp_path):
     assert not profile_in_use(tmp_path)
     (tmp_path / ".parentlock").touch()
@@ -164,4 +165,21 @@ def test_profile_in_use_follows_zen_lock(tmp_path):
     finally:
         holder.kill()
         holder.wait()
+    assert not profile_in_use(tmp_path)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows file sharing")
+def test_profile_in_use_follows_zen_lock_on_windows(tmp_path):
+    import _winapi
+
+    assert not profile_in_use(tmp_path)
+    lock = tmp_path / "parent.lock"
+    lock.touch()
+    assert not profile_in_use(tmp_path)
+    # Zen opens parent.lock without sharing while the profile is running
+    handle = _winapi.CreateFile(str(lock), _winapi.GENERIC_WRITE, 0, 0, _winapi.OPEN_EXISTING, 0, 0)
+    try:
+        assert profile_in_use(tmp_path)
+    finally:
+        _winapi.CloseHandle(handle)
     assert not profile_in_use(tmp_path)

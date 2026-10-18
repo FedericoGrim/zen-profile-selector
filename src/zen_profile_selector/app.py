@@ -16,6 +16,7 @@ from tkinter import filedialog
 from typing import TypeVar
 
 import customtkinter as ctk
+from send2trash import send2trash
 
 from .config import Settings, config_dir, load_settings, save_settings, validate_settings, xdg_config_home
 from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
@@ -190,7 +191,13 @@ class ProfileSelector:
         self.run_in_background(upgrade, done)
 
     def restart(self) -> None:
-        os.execv(sys.executable, [sys.executable, "-m", "zen_profile_selector"])
+        command = [sys.executable, "-m", "zen_profile_selector"]
+        if sys.platform == "win32":
+            # os.execv on Windows starts a new process and returns, leaving both windows open
+            subprocess.Popen(command)
+            self.root.quit()
+        else:
+            os.execv(sys.executable, command)
 
     def run_in_background(self, work: Callable[[], T], on_done: Callable[[T], None]) -> None:
         """Run work in a thread and hand its result to on_done in the Tk main loop."""
@@ -661,9 +668,9 @@ class ProfileSelector:
         except ValueError as error:
             return str(error)
         if profile_dir.exists():
-            if shutil.which("gio") is None:
-                return "trash_unavailable"
-            if subprocess.run(["gio", "trash", str(profile_dir)], capture_output=True).returncode != 0:
+            try:
+                send2trash(profile_dir)
+            except OSError:
                 return "trash_failed"
         self.write_profiles_ini(new_ini)
         remove_icon(self.icons_file, name)
@@ -686,6 +693,8 @@ def main() -> None:
         "--uninstall-desktop", action="store_true", help="remove it from the applications menu"
     )
     args = parser.parse_args()
+    if (args.install_desktop or args.uninstall_desktop) and sys.platform != "linux":
+        parser.error("the applications menu entry is only supported on Linux")
 
     target = desktop_file(os.environ, Path.home())
     if args.install_desktop:
