@@ -11,7 +11,8 @@ WINDOWS_EMOJI_FONT = "seguiemj.ttf"
 
 @cache
 def emoji_image(emoji: str, size: int, font_file: str = WINDOWS_EMOJI_FONT) -> Image.Image | None:
-    """The emoji drawn in color, cropped to its glyph; None without Pillow or the font.
+    """The emoji drawn in color and centered in a square, so every icon lines up the same way;
+    None without Pillow or the font.
 
     Tk on Windows draws emoji in a single color, so the selector shows them as images there.
     """
@@ -22,6 +23,8 @@ def emoji_image(emoji: str, size: int, font_file: str = WINDOWS_EMOJI_FONT) -> I
     except (ImportError, OSError):
         return None
     left, top, right, bottom = font.getbbox(emoji)
-    image = Image.new("RGBA", (right - left, bottom - top))
-    ImageDraw.Draw(image).text((-left, -top), emoji, font=font, embedded_color=True)
+    side = max(right - left, bottom - top)
+    image = Image.new("RGBA", (side, side))
+    origin = ((side - (right - left)) // 2 - left, (side - (bottom - top)) // 2 - top)
+    ImageDraw.Draw(image).text(origin, emoji, font=font, embedded_color=True)
     return image
