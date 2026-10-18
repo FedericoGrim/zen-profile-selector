@@ -16,7 +16,7 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 - **Safe deletion**: you must type the profile name to confirm. Profiles that are open in Zen cannot be deleted, the last profile cannot be deleted, and the profile folder goes to your **Trash**, so it can be restored. A backup of `profiles.ini` is written before every change.
 - **Works with any Zen install**: detects the Flatpak (`app.zen_browser.zen`) and native installs (`zen` / `zen-browser` on your `PATH`) automatically. If detection fails, set the Zen command and profiles folder by hand in **Settings** (⚙, top right).
 - **English and Italian**: pick the language from the menu next to ⚙. The choice is remembered.
-- **Update notice**: once a day the selector checks PyPI in the background and, when a newer version exists, shows a small banner with the `pipx upgrade` command. Turn it off in **Settings**, where you can also see the installed version.
+- **Update notice**: once a day the selector checks PyPI in the background and, when a newer version exists, shows a small banner. Click **Update** to run `pipx upgrade` for you, then **Restart**; installs not made with pipx get the command to copy instead. Turn it off in **Settings**, where you can also see the installed version.
 
 | Edit a profile | Settings |
 |---|---|
@@ -60,7 +60,7 @@ Leave the Zen command and profiles folder empty to let the selector detect them.
 
 ## Privacy
 
-The selector sends no data about you. Its only network request is the update check: at most once a day it downloads the public `https://pypi.org/pypi/zen-profile-selector/json` page to read the latest version number. Untick **Check for updates at startup** in Settings to turn it off. It never updates itself: run `pipx upgrade zen-profile-selector` when you want the new version.
+The selector sends no data about you. Its only network request is the update check: at most once a day it downloads the public `https://pypi.org/pypi/zen-profile-selector/json` page to read the latest version number. Untick **Check for updates at startup** in Settings to turn it off. It only updates when you click **Update**, and then it simply runs `pipx upgrade zen-profile-selector`.
 
 ## How it works
 

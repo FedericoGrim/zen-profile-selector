@@ -13,6 +13,7 @@ from datetime import date
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog
+from typing import TypeVar
 
 import customtkinter as ctk
 
@@ -39,6 +40,7 @@ from .version import (
     fetch_latest_version,
     installed_version,
     load_update_state,
+    pipx_upgrade_command,
     save_update_state,
     update_check_due,
     version_to_announce,
@@ -46,6 +48,7 @@ from .version import (
 from .zen import ZenInstall, create_profile_command, detect_zen, launch_command
 
 ASSETS = Path(__file__).with_name("assets")
+T = TypeVar("T")
 ICONS_FILE_NAME = "profile_icons.json"
 
 BACKGROUND = "#212122"
@@ -134,28 +137,75 @@ class ProfileSelector:
             text_color=TEXT,
             command=partial(self.dismiss_update, version),
         ).pack(side="right", padx=(0, 6))
-        copy_button = ctk.CTkButton(
-            banner,
-            text=self.text("copy_command"),
-            width=110,
-            height=28,
-            fg_color=HOVER,
-            hover_color="#4a4a4a",
-        )
-        copy_button.configure(command=partial(self.copy_upgrade_command, copy_button))
-        copy_button.pack(side="right", padx=6)
-        ctk.CTkLabel(
+        message = ctk.CTkLabel(
             banner,
             text=self.text("update_available", version=version, command=UPGRADE_COMMAND),
             text_color=TEXT,
             justify="left",
             anchor="w",
-        ).pack(side="left", fill="x", expand=True, padx=12, pady=8)
+        )
+        action = ctk.CTkButton(banner, width=110, height=28, fg_color=HOVER, hover_color="#4a4a4a")
+        upgrade = pipx_upgrade_command(sys.executable)
+        if upgrade:
+            message.configure(text=self.text("update_ready", version=version))
+            action.configure(
+                text=self.text("update"), command=partial(self.run_upgrade, upgrade, version, message, action)
+            )
+        else:
+            action.configure(
+                text=self.text("copy_command"), command=partial(self.copy_upgrade_command, action)
+            )
+        action.pack(side="right", padx=6)
+        message.pack(side="left", fill="x", expand=True, padx=12, pady=8)
 
     def copy_upgrade_command(self, button: ctk.CTkButton) -> None:
         self.root.clipboard_clear()
         self.root.clipboard_append(UPGRADE_COMMAND)
         button.configure(text=self.text("copied"))
+
+    def run_upgrade(
+        self, command: list[str], version: str, message: ctk.CTkLabel, button: ctk.CTkButton
+    ) -> None:
+        """Upgrade with pipx in the background, then offer a restart; on failure show the manual command."""
+        button.configure(text=self.text("updating"), state="disabled")
+
+        def upgrade() -> bool:
+            try:
+                return subprocess.run(command, capture_output=True, timeout=300).returncode == 0
+            except (OSError, subprocess.TimeoutExpired):
+                return False
+
+        def done(succeeded: bool) -> None:
+            if succeeded:
+                message.configure(text=self.text("update_done", version=version))
+                button.configure(text=self.text("restart"), state="normal", command=self.restart)
+            else:
+                message.configure(text=self.text("update_failed", command=UPGRADE_COMMAND))
+                button.configure(
+                    text=self.text("copy_command"),
+                    state="normal",
+                    command=partial(self.copy_upgrade_command, button),
+                )
+
+        self.run_in_background(upgrade, done)
+
+    def restart(self) -> None:
+        os.execv(sys.executable, [sys.executable, "-m", "zen_profile_selector"])
+
+    def run_in_background(self, work: Callable[[], T], on_done: Callable[[T], None]) -> None:
+        """Run work in a thread and hand its result to on_done in the Tk main loop."""
+        result: list[T] = []
+        thread = threading.Thread(target=lambda: result.append(work()), daemon=True)
+        thread.start()
+
+        def poll() -> None:
+            # Tk is not thread safe: poll from the main loop instead of calling it from the thread
+            if thread.is_alive():
+                self.root.after(200, poll)
+            elif result:
+                on_done(result[0])
+
+        self.root.after(200, poll)
 
     def dismiss_update(self, version: str) -> None:
         self.update_state = replace(self.update_state, dismissed=version)
@@ -168,24 +218,17 @@ class ProfileSelector:
             self.settings.check_updates and self.version and update_check_due(self.update_state, date.today())
         ):
             return
-        result: list[str | None] = []
-        thread = threading.Thread(target=lambda: result.append(fetch_latest_version()), daemon=True)
-        thread.start()
 
-        def finish() -> None:
-            # Tk is not thread safe: poll from the main loop instead of calling it from the thread
-            if thread.is_alive():
-                self.root.after(200, finish)
-                return
-            if not result[0]:
+        def finish(latest: str | None) -> None:
+            if not latest:
                 return  # offline: try again at the next start
             announced = version_to_announce(self.update_state, self.version)
-            self.update_state = replace(self.update_state, checked=date.today().isoformat(), latest=result[0])
+            self.update_state = replace(self.update_state, checked=date.today().isoformat(), latest=latest)
             save_update_state(self.settings_dir, self.update_state)
             if version_to_announce(self.update_state, self.version) != announced:
                 self.build()
 
-        self.root.after(200, finish)
+        self.run_in_background(fetch_latest_version, finish)
 
     def detect(self, settings: Settings) -> ZenInstall | None:
         return detect_zen(
