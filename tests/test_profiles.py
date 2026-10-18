@@ -16,6 +16,7 @@ from zen_profile_selector.profiles import (
     rename_profile,
     save_icon,
     validate_profile_name,
+    wait_for_profile,
 )
 
 PROFILES_INI = """[General]
@@ -183,3 +184,24 @@ def test_profile_in_use_follows_zen_lock_on_windows(tmp_path):
     finally:
         _winapi.CloseHandle(handle)
     assert not profile_in_use(tmp_path)
+
+
+def test_wait_for_profile_returns_once_zen_has_written_it(tmp_path):
+    ini = tmp_path / "profiles.ini"
+    ini.write_text("[General]\n")
+    waits = []
+
+    def zen_writes_while_we_wait(seconds):
+        waits.append(seconds)
+        ini.write_text("[Profile0]\nName=Work\nIsRelative=1\nPath=Profiles/x.Work\n")
+
+    assert wait_for_profile(tmp_path, "Work", sleep=zen_writes_while_we_wait)
+    assert len(waits) == 1
+
+
+def test_wait_for_profile_gives_up_after_the_timeout(tmp_path):
+    (tmp_path / "profiles.ini").write_text("[General]\n")
+    clock = iter(range(100))
+    assert not wait_for_profile(
+        tmp_path, "Work", timeout=5, sleep=lambda seconds: None, clock=lambda: next(clock)
+    )

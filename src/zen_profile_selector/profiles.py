@@ -4,7 +4,8 @@ import io
 import json
 import os
 import sys
-from collections.abc import Iterable
+import time
+from collections.abc import Callable, Iterable
 from configparser import ConfigParser, SectionProxy
 from pathlib import Path
 
@@ -48,6 +49,23 @@ def read_profiles(profiles_dir: Path) -> dict[str, str]:
         if name and path:
             profiles[name] = path if section.get("IsRelative") == "0" else str(profiles_dir / path)
     return dict(sorted(profiles.items(), key=lambda item: item[0].casefold()))
+
+
+def wait_for_profile(
+    profiles_dir: Path,
+    name: str,
+    timeout: float = 5,
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> bool:
+    """True once the profile is in profiles.ini. Zen can write it after its command returns, e.g. on
+    Windows when it relaunches itself without administrator rights."""
+    deadline = clock() + timeout
+    while name not in read_profiles(profiles_dir):
+        if clock() >= deadline:
+            return False
+        sleep(0.25)
+    return True
 
 
 def validate_profile_name(name: str, existing_names: Iterable[str]) -> str | None:
