@@ -15,3 +15,11 @@ def test_windows_emoji_are_rendered_in_color():
     assert image is not None
     colors = {color[:3] for _, color in image.getcolors(image.width * image.height) if color[3]}
     assert len(colors) > 10
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Segoe UI Emoji ships with Windows")
+def test_windows_emoji_images_are_square():
+    for emoji in ("🎓", "📌", "✈️"):
+        image = emoji_image(emoji, 32)
+        assert image is not None
+        assert image.width == image.height

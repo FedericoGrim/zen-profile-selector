@@ -93,12 +93,11 @@ class ProfileSelector:
 
     @staticmethod
     def emoji_options(emoji: str, font_size: int, image_size: int) -> dict[str, Any]:
-        """Widget options showing an emoji: as text, or on Windows as a color image fitted in image_size."""
+        """Widget options showing an emoji: as text, or on Windows as an image_size color square."""
         image = emoji_image(emoji, image_size * 2) if sys.platform == "win32" else None
         if image is None:
             return {"text": emoji, "font": ("Arial", font_size)}
-        scale = image_size / max(image.size)
-        size = (round(image.width * scale), round(image.height * scale))
+        size = (image_size, image_size)
         return {"text": "", "image": ctk.CTkImage(light_image=image, dark_image=image, size=size)}
 
     def text(self, key: str, **values: str) -> str:
@@ -361,7 +360,7 @@ class ProfileSelector:
 
         content = ctk.CTkFrame(card, fg_color="transparent")
         content.place(relx=0.5, rely=0.5, anchor="center")
-        icon_options = self.emoji_options(icon, 40, 48) if on_edit else {"text": icon, "font": ("Arial", 40)}
+        icon_options = self.emoji_options(icon, 40, 56) if on_edit else {"text": icon, "font": ("Arial", 40)}
         icon_label = ctk.CTkLabel(content, **icon_options)
         icon_label.pack(pady=(10, 5))
         name_label = ctk.CTkLabel(content, text=label, font=("Arial", 13, "bold"), text_color=TEXT)
@@ -461,7 +460,7 @@ class ProfileSelector:
         for index, choice in enumerate(choices):
             button = ctk.CTkButton(
                 icons_frame,
-                **self.emoji_options(choice, 22, 26),
+                **self.emoji_options(choice, 22, 30),
                 width=44,
                 height=44,
                 fg_color=CARD,
