@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import os
-import shlex
 import shutil
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Any
+
+from .zen import split_command
 
 APP_NAME = "zen-profile-selector"
 SETTINGS_FILE = "config.json"
@@ -29,7 +31,9 @@ def xdg_config_home(env: Mapping[str, str], home: Path) -> Path:
     return Path(env.get("XDG_CONFIG_HOME") or home / ".config")
 
 
-def config_dir(env: Mapping[str, str], home: Path) -> Path:
+def config_dir(env: Mapping[str, str], home: Path, system: str = sys.platform) -> Path:
+    if system == "win32":
+        return Path(env.get("APPDATA") or home / "AppData/Roaming") / APP_NAME
     return xdg_config_home(env, home) / APP_NAME
 
 
@@ -57,17 +61,20 @@ def save_settings(folder: Path, settings: Settings) -> None:
 
 
 def validate_settings(
-    zen_command: str, profiles_dir: str, which: Callable[[str], str | None] = shutil.which
+    zen_command: str,
+    profiles_dir: str,
+    which: Callable[[str], str | None] = shutil.which,
+    system: str = sys.platform,
 ) -> str | None:
     """Translation key of the first problem in the manual settings, None when they are usable."""
     if profiles_dir and not (Path(profiles_dir).expanduser() / "profiles.ini").is_file():
         return "profiles_dir_invalid"
     if zen_command:
         try:
-            program = shlex.split(zen_command)[0]
+            program = split_command(zen_command, system)[0]
         except (ValueError, IndexError):
             return "zen_command_invalid"
-        if "/" in program:
+        if "/" in program or (system == "win32" and "\\" in program):
             path = Path(program).expanduser()
             if not (path.is_file() and os.access(path, os.X_OK)):
                 return "zen_command_not_found"

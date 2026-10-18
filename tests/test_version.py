@@ -115,3 +115,8 @@ def test_other_installs_or_missing_pipx_cannot_update_themselves():
     assert pipx_upgrade_command("/home/user/project/.venv/bin/python", which=pipx_on_path) is None
     python = "/home/user/.local/share/pipx/venvs/zen-profile-selector/bin/python"
     assert pipx_upgrade_command(python, which=lambda name: None) is None
+
+
+def test_windows_pipx_installs_can_update_themselves():
+    python = r"C:\Users\me\pipx\venvs\zen-profile-selector\Scripts\python.exe"
+    assert pipx_upgrade_command(python, which=pipx_on_path, system="win32") is not None

@@ -3,12 +3,13 @@ from __future__ import annotations
 import http.client
 import json
 import shutil
+import sys
 import urllib.request
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import date
 from importlib import metadata
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import IO, Any
 
 from .config import APP_NAME
@@ -27,11 +28,13 @@ def installed_version(read_version: Callable[[str], str] = metadata.version) -> 
 
 
 def pipx_upgrade_command(
-    executable: str, which: Callable[[str], str | None] = shutil.which
+    executable: str, which: Callable[[str], str | None] = shutil.which, system: str = sys.platform
 ) -> list[str] | None:
     """Command that upgrades this install in place; None unless it runs from a pipx virtual environment."""
+    parts = (PureWindowsPath if system == "win32" else PurePosixPath)(executable).parts
+    in_pipx = any(parts[index : index + 3] == ("pipx", "venvs", APP_NAME) for index in range(len(parts)))
     pipx = which("pipx")
-    if pipx is None or f"/pipx/venvs/{APP_NAME}/" not in executable:
+    if pipx is None or not in_pipx:
         return None
     return [pipx, "upgrade", APP_NAME]
 
