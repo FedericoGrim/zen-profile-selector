@@ -68,3 +68,11 @@ def test_zen_command_with_a_path_must_be_executable(tmp_path):
 
 def test_unbalanced_quotes_are_an_invalid_command():
     assert validate_settings('zen "--profile', "", which=zen_on_path) == "zen_command_invalid"
+
+
+def test_update_check_is_on_by_default_and_can_be_turned_off(tmp_path):
+    assert Settings().check_updates is True
+    (tmp_path / "config.json").write_text('{"check_updates": false}')
+    assert load_settings(tmp_path) == Settings(check_updates=False)
+    (tmp_path / "config.json").write_text('{"check_updates": "no", "language": true}')
+    assert load_settings(tmp_path) == Settings()
