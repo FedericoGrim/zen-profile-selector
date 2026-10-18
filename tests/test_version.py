@@ -10,6 +10,7 @@ from zen_profile_selector.version import (
     installed_version,
     is_newer,
     load_update_state,
+    pipx_upgrade_command,
     save_update_state,
     update_check_due,
     version_to_announce,
@@ -95,3 +96,22 @@ def test_only_a_newer_not_dismissed_version_is_announced():
     assert version_to_announce(UpdateState(latest="0.2.0", dismissed="0.2.0"), "0.1.2") is None
     assert version_to_announce(UpdateState(latest="0.2.1", dismissed="0.2.0"), "0.1.2") == "0.2.1"
     assert version_to_announce(UpdateState(latest="0.2.0"), None) is None
+
+
+def pipx_on_path(name):
+    return "/usr/bin/pipx" if name == "pipx" else None
+
+
+def test_pipx_installs_can_update_themselves():
+    python = "/home/user/.local/share/pipx/venvs/zen-profile-selector/bin/python"
+    assert pipx_upgrade_command(python, which=pipx_on_path) == [
+        "/usr/bin/pipx",
+        "upgrade",
+        "zen-profile-selector",
+    ]
+
+
+def test_other_installs_or_missing_pipx_cannot_update_themselves():
+    assert pipx_upgrade_command("/home/user/project/.venv/bin/python", which=pipx_on_path) is None
+    python = "/home/user/.local/share/pipx/venvs/zen-profile-selector/bin/python"
+    assert pipx_upgrade_command(python, which=lambda name: None) is None

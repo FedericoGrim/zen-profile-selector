@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import shutil
 import urllib.request
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
@@ -23,6 +24,16 @@ def installed_version(read_version: Callable[[str], str] = metadata.version) -> 
         return read_version(APP_NAME)
     except metadata.PackageNotFoundError:
         return None
+
+
+def pipx_upgrade_command(
+    executable: str, which: Callable[[str], str | None] = shutil.which
+) -> list[str] | None:
+    """Command that upgrades this install in place; None unless it runs from a pipx virtual environment."""
+    pipx = which("pipx")
+    if pipx is None or f"/pipx/venvs/{APP_NAME}/" not in executable:
+        return None
+    return [pipx, "upgrade", APP_NAME]
 
 
 def parse_version(text: str) -> tuple[int, ...] | None:
