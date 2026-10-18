@@ -1,12 +1,13 @@
 # Builds the Windows installer: PyInstaller bundles the app, Inno Setup wraps it.
-# Usage: powershell -File packaging\windows\build.ps1 -Version 0.3.1
-param([Parameter(Mandatory = $true)][string]$Version)
+# Usage: powershell -File packaging\windows\build.ps1
+# The installer gets the version of the package, so the two can never differ.
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path "$PSScriptRoot\..\..").Path
 Set-Location $root
 
 python -m pip install --quiet . "pyinstaller>=6.11,<7"
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
+$Version = python -c "from importlib.metadata import version; print(version('zen-profile-selector'))"
 
 python -m PyInstaller --noconfirm --clean --windowed `
     --name zen-profile-selector `
