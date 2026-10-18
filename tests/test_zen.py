@@ -6,6 +6,7 @@ from zen_profile_selector.zen import (
     create_profile_command,
     detect_zen,
     launch_command,
+    split_command,
     zen_profiles_dir,
 )
 
@@ -30,7 +31,26 @@ def zen_binary(name: str):
 
 
 def detect(home, which=no_binaries, flatpak=False, **overrides):
+    overrides.setdefault("system", "linux")
     return detect_zen(home, which=which, flatpak_installed=lambda: flatpak, **overrides)
+
+
+def windows_env(home: Path) -> dict[str, str]:
+    return {
+        "APPDATA": str(home / "AppData/Roaming"),
+        "LOCALAPPDATA": str(home / "AppData/Local"),
+        "ProgramFiles": str(home / "Program Files"),
+    }
+
+
+def detect_windows(home, which=no_binaries, **overrides):
+    return detect(home, which=which, system="win32", env=windows_env(home), **overrides)
+
+
+def add_file(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch()
+    return path
 
 
 def test_detects_flatpak_install(tmp_path):
@@ -122,3 +142,40 @@ def test_launch_and_create_commands_use_the_install_command(tmp_path):
     install = ZenInstall(FLATPAK_COMMAND, tmp_path)
     assert launch_command(install, "/p/abc.Work") == [*FLATPAK_COMMAND, "--profile", "/p/abc.Work"]
     assert create_profile_command(install, "Gaming") == [*FLATPAK_COMMAND, "--CreateProfile", "Gaming"]
+
+
+def test_windows_finds_zen_in_program_files(tmp_path):
+    zen = add_file(tmp_path / "Program Files/Zen Browser/zen.exe")
+    install = detect_windows(tmp_path)
+    assert install == ZenInstall((str(zen),), tmp_path / "AppData/Roaming/zen")
+
+
+def test_windows_finds_a_per_user_zen_install(tmp_path):
+    zen = add_file(tmp_path / "AppData/Local/Zen Browser/zen.exe")
+    assert detect_windows(tmp_path).command == (str(zen),)
+
+
+def test_windows_prefers_zen_on_the_path(tmp_path):
+    add_file(tmp_path / "Program Files/Zen Browser/zen.exe")
+    install = detect_windows(tmp_path, which=lambda name: r"C:\Tools\zen.exe" if name == "zen" else None)
+    assert install.command == (r"C:\Tools\zen.exe",)
+
+
+def test_windows_never_looks_for_flatpak(tmp_path):
+    assert detect(tmp_path, flatpak=True, system="win32", env=windows_env(tmp_path)) is None
+
+
+def test_windows_without_zen_returns_none(tmp_path):
+    assert detect_windows(tmp_path) is None
+
+
+def test_commands_split_like_the_shell_on_linux():
+    assert split_command("'/opt/my zen/zen' --no-remote", system="linux") == (
+        "/opt/my zen/zen",
+        "--no-remote",
+    )
+
+
+def test_commands_keep_backslashes_on_windows():
+    command = r'"C:\Program Files\Zen Browser\zen.exe" --no-remote'
+    assert split_command(command, system="win32") == (r"C:\Program Files\Zen Browser\zen.exe", "--no-remote")

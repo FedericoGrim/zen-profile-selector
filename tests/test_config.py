@@ -1,15 +1,24 @@
+import sys
 from pathlib import Path
+
+import pytest
 
 from zen_profile_selector.config import Settings, config_dir, load_settings, save_settings, validate_settings
 
 
 def test_config_dir_follows_xdg_config_home(tmp_path):
     env = {"XDG_CONFIG_HOME": str(tmp_path / "xdg")}
-    assert config_dir(env, home=tmp_path) == tmp_path / "xdg" / "zen-profile-selector"
+    assert config_dir(env, home=tmp_path, system="linux") == tmp_path / "xdg" / "zen-profile-selector"
 
 
 def test_config_dir_defaults_to_dot_config(tmp_path):
-    assert config_dir({}, home=tmp_path) == tmp_path / ".config" / "zen-profile-selector"
+    assert config_dir({}, home=tmp_path, system="linux") == tmp_path / ".config" / "zen-profile-selector"
+
+
+def test_config_dir_on_windows_is_in_appdata(tmp_path):
+    env = {"APPDATA": str(tmp_path / "Roaming"), "XDG_CONFIG_HOME": str(tmp_path / "xdg")}
+    assert config_dir(env, home=tmp_path, system="win32") == tmp_path / "Roaming" / "zen-profile-selector"
+    assert config_dir({}, home=tmp_path, system="win32") == tmp_path / "AppData/Roaming/zen-profile-selector"
 
 
 def test_missing_config_gives_defaults(tmp_path):
@@ -58,6 +67,7 @@ def test_zen_command_must_exist(tmp_path):
     assert validate_settings(str(tmp_path / "missing"), "", which=zen_on_path) == "zen_command_not_found"
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no executable bit")
 def test_zen_command_with_a_path_must_be_executable(tmp_path):
     binary = tmp_path / "zen"
     binary.write_text("#!/bin/sh\n")
@@ -76,3 +86,8 @@ def test_update_check_is_on_by_default_and_can_be_turned_off(tmp_path):
     assert load_settings(tmp_path) == Settings(check_updates=False)
     (tmp_path / "config.json").write_text('{"check_updates": "no", "language": true}')
     assert load_settings(tmp_path) == Settings()
+
+
+def test_windows_command_with_a_missing_path_is_not_found(tmp_path):
+    command = r'"C:\Program Files\Missing\zen.exe" --no-remote'
+    assert validate_settings(command, "", which=zen_on_path, system="win32") == "zen_command_not_found"
