@@ -1,14 +1,16 @@
 # Builds the Windows installer: PyInstaller bundles the app, Inno Setup wraps it.
-# Usage, from the repository root: powershell -File packaging\windows\build.ps1 -Version 0.3.1
+# Usage: powershell -File packaging\windows\build.ps1 -Version 0.3.1
 param([Parameter(Mandatory = $true)][string]$Version)
 $ErrorActionPreference = "Stop"
+$root = (Resolve-Path "$PSScriptRoot\..\..").Path
+Set-Location $root
 
 python -m pip install --quiet . "pyinstaller>=6.11,<7"
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
 python -m PyInstaller --noconfirm --clean --windowed `
     --name zen-profile-selector `
-    --icon src\zen_profile_selector\assets\icon.ico `
+    --icon "$root\src\zen_profile_selector\assets\icon.ico" `
     --collect-data zen_profile_selector `
     --collect-data customtkinter `
     --copy-metadata zen-profile-selector `
