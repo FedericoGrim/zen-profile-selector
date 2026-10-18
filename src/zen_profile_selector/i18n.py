@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import locale
+import sys
 from collections.abc import Mapping
 
 DEFAULT_LANGUAGE = "en"
@@ -91,13 +93,28 @@ TRANSLATIONS = {
 }
 
 
-def detect_language(env: Mapping[str, str]) -> str:
-    """First supported language from the usual locale variables, English otherwise."""
-    for variable in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
-        for locale in env.get(variable, "").split(":"):
-            code = locale[:2].lower()
-            if code in LANGUAGES:
-                return code
+def windows_display_locale(system: str = sys.platform) -> str | None:
+    """Windows display language as a locale name such as it_IT; None on other systems."""
+    if system != "win32":
+        return None
+    import ctypes
+
+    language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()  # type: ignore[attr-defined]
+    return locale.windows_locale.get(language_id)
+
+
+def detect_language(env: Mapping[str, str], system_locale: str | None = None) -> str:
+    """First supported language from the usual locale variables, then from the system locale (the
+    Windows display language, since Windows sets no locale variables), English otherwise."""
+    candidates = [
+        name
+        for variable in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG")
+        for name in env.get(variable, "").split(":")
+    ]
+    for name in [*candidates, system_locale or ""]:
+        code = name[:2].lower()
+        if code in LANGUAGES:
+            return code
     return DEFAULT_LANGUAGE
 
 

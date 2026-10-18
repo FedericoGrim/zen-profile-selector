@@ -21,7 +21,7 @@ from send2trash import send2trash
 from .config import Settings, config_dir, load_settings, save_settings, validate_settings, xdg_config_home
 from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
 from .emoji import emoji_image
-from .i18n import LANGUAGES, detect_language, translate
+from .i18n import LANGUAGES, detect_language, translate, windows_display_locale
 from .layout import grid_columns, primary_monitor
 from .profiles import (
     DEFAULT_ICON,
@@ -68,7 +68,7 @@ class ProfileSelector:
         self.settings_dir = settings_dir
         self.icons_file = settings_dir / ICONS_FILE_NAME
         self.settings = load_settings(settings_dir)
-        self.language = self.settings.language or detect_language(os.environ)
+        self.language = self.settings.language or detect_language(os.environ, windows_display_locale())
         self.install: ZenInstall | None = None
         self.profiles: dict[str, str] = {}
         self.version = installed_version()
