@@ -79,9 +79,16 @@ class ProfileSelector:
         self.root.configure(fg_color=BACKGROUND)
         self.logo = tk.PhotoImage(file=ASSETS / "icon-header.png")
         self.root.iconphoto(True, self.logo)
+        self.set_windows_icon(self.root)
 
         self.build()
         self.start_update_check()
+
+    @staticmethod
+    def set_windows_icon(window: ctk.CTk | ctk.CTkToplevel) -> None:
+        """CustomTkinter puts its own icon on Windows title bars unless iconbitmap gets an .ico file."""
+        if sys.platform == "win32":
+            window.iconbitmap(ASSETS / "icon.ico")
 
     def text(self, key: str, **values: str) -> str:
         return translate(self.language, key, **values)
@@ -348,48 +355,68 @@ class ProfileSelector:
         name_label = ctk.CTkLabel(content, text=label, font=("Arial", 13, "bold"), text_color=TEXT)
         name_label.pack()
 
-        # Icon and name sit on top of the button: forward clicks and hover to the card
-        for widget in (content, icon_label, name_label):
-            widget.bind("<ButtonRelease-1>", lambda event: command())
-            widget.bind("<Enter>", lambda event: card._on_enter())
-
-        if on_edit is None:
-            return
-
-        edit_button = ctk.CTkButton(
-            card,
-            text="✎",
-            font=("Arial", 14),
-            width=26,
-            height=26,
-            fg_color=HOVER,
-            bg_color=HOVER,
-            hover_color="#4a4a4a",
-            text_color=TEXT,
-            corner_radius=6,
-            command=on_edit,
+        inner = (content, icon_label, name_label)
+        edit_button = (
+            None
+            if on_edit is None
+            else ctk.CTkButton(
+                card,
+                text="✎",
+                font=("Arial", 14),
+                width=26,
+                height=26,
+                fg_color=HOVER,
+                bg_color=HOVER,
+                hover_color="#4a4a4a",
+                text_color=TEXT,
+                corner_radius=6,
+                command=on_edit,
+            )
         )
 
-        def show_edit(event: tk.Event | None = None) -> None:
-            edit_button.place(relx=1, x=-6, y=6, anchor="ne")
+        def highlight(event: tk.Event | None = None) -> None:
+            # The icon and name keep their own background: repaint them with the card's hover color
+            card._on_enter()
+            for widget in inner:
+                widget.configure(fg_color=HOVER, bg_color=HOVER)
+            if edit_button:
+                edit_button.place(relx=1, x=-6, y=6, anchor="ne")
 
-        def hide_edit_if_outside() -> None:
-            # Leave also fires over the inner labels: hide only once the pointer has left the card
+        def unhighlight_if_outside() -> None:
+            # Leave also fires over the inner labels: reset only once the pointer has left the card
             pointer = card.winfo_containing(*card.winfo_pointerxy())
-            if not pointer or not str(pointer).startswith(str(card)):
+            if pointer and str(pointer).startswith(str(card)):
+                return
+            card._on_leave()
+            for widget in inner:
+                widget.configure(fg_color=CARD, bg_color=CARD)
+            if edit_button:
                 edit_button.place_forget()
 
-        for widget in (card, content, icon_label, name_label):
-            widget.bind("<Enter>", show_edit, add="+")
-            widget.bind("<Leave>", lambda event: card.after(50, hide_edit_if_outside), add="+")
+        # Icon and name sit on top of the button: forward clicks to the card
+        for widget in inner:
+            widget.bind("<ButtonRelease-1>", lambda event: command())
+        for widget in (card, *inner):
+            widget.bind("<Enter>", highlight, add="+")
+            widget.bind("<Leave>", lambda event: card.after(50, unhighlight_if_outside), add="+")
 
-    def open_dialog(self, title: str) -> ctk.CTkToplevel:
-        dialog = ctk.CTkToplevel(self.root, fg_color=BACKGROUND)
+    def open_dialog(self, title: str, owner: ctk.CTk | ctk.CTkToplevel | None = None) -> ctk.CTkToplevel:
+        """Modal dialog over its owner (the main window unless another dialog opens it)."""
+        owner = owner or self.root
+        dialog = ctk.CTkToplevel(owner, fg_color=BACKGROUND)
         dialog.title(title)
         dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.geometry(f"+{self.root.winfo_rootx() + 40}+{self.root.winfo_rooty() + 40}")
-        dialog.after(100, dialog.grab_set)
+        dialog.transient(owner)
+        dialog.geometry(f"+{owner.winfo_rootx() + 40}+{owner.winfo_rooty() + 40}")
+        self.set_windows_icon(dialog)
+
+        def take_focus() -> None:
+            # On Windows a dialog opened from another one can end up behind it
+            dialog.lift()
+            dialog.focus_force()
+            dialog.grab_set()
+
+        dialog.after(100, take_focus)
         return dialog
 
     def open_profile_dialog(
@@ -590,7 +617,7 @@ class ProfileSelector:
 
     def open_delete_dialog(self, name: str, edit_dialog: ctk.CTkToplevel) -> None:
         """Confirm the deletion by typing the profile name."""
-        dialog = self.open_dialog(self.text("delete_title"))
+        dialog = self.open_dialog(self.text("delete_title"), owner=edit_dialog)
 
         ctk.CTkLabel(
             dialog,
