@@ -42,6 +42,7 @@ Check that everything works:
 | `i18n.py` | Translations and system language detection |
 | `layout.py` | Grid size and primary monitor helpers |
 | `desktop.py` | Applications menu entry |
+| `version.py` | Installed version and the daily update check on PyPI |
 | `app.py` | The customtkinter interface and the command-line entry point |
 
 Keep logic out of `app.py`: put new behavior in a small, pure function in one of the other modules, test it there, then call it from the interface.

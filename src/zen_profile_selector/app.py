@@ -5,12 +5,15 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import replace
+from datetime import date
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog
+from typing import TypeVar
 
 import customtkinter as ctk
 
@@ -32,9 +35,20 @@ from .profiles import (
     save_icon,
     validate_profile_name,
 )
+from .version import (
+    UPGRADE_COMMAND,
+    fetch_latest_version,
+    installed_version,
+    load_update_state,
+    pipx_upgrade_command,
+    save_update_state,
+    update_check_due,
+    version_to_announce,
+)
 from .zen import ZenInstall, create_profile_command, detect_zen, launch_command
 
 ASSETS = Path(__file__).with_name("assets")
+T = TypeVar("T")
 ICONS_FILE_NAME = "profile_icons.json"
 
 BACKGROUND = "#212122"
@@ -54,6 +68,8 @@ class ProfileSelector:
         self.language = self.settings.language or detect_language(os.environ)
         self.install: ZenInstall | None = None
         self.profiles: dict[str, str] = {}
+        self.version = installed_version()
+        self.update_state = load_update_state(settings_dir)
 
         ctk.set_appearance_mode("dark")
         self.root.title("Zen Profile Selector")
@@ -63,6 +79,7 @@ class ProfileSelector:
         self.root.iconphoto(True, self.logo)
 
         self.build()
+        self.start_update_check()
 
     def text(self, key: str, **values: str) -> str:
         return translate(self.language, key, **values)
@@ -103,6 +120,116 @@ class ProfileSelector:
         ).pack(side="right")
         language_menu.pack(side="right", padx=(0, 6))
 
+    def build_update_banner(self) -> None:
+        """Small banner with the upgrade command when a newer version is on PyPI."""
+        version = version_to_announce(self.update_state, self.version)
+        if version is None:
+            return
+        banner = ctk.CTkFrame(self.root, fg_color=CARD, corner_radius=8)
+        banner.pack(fill="x", padx=12, pady=(8, 0))
+        ctk.CTkButton(
+            banner,
+            text="✕",
+            width=28,
+            height=28,
+            fg_color="transparent",
+            hover_color=HOVER,
+            text_color=TEXT,
+            command=partial(self.dismiss_update, version),
+        ).pack(side="right", padx=(0, 6))
+        message = ctk.CTkLabel(
+            banner,
+            text=self.text("update_available", version=version, command=UPGRADE_COMMAND),
+            text_color=TEXT,
+            justify="left",
+            anchor="w",
+        )
+        action = ctk.CTkButton(banner, width=110, height=28, fg_color=HOVER, hover_color="#4a4a4a")
+        upgrade = pipx_upgrade_command(sys.executable)
+        if upgrade:
+            message.configure(text=self.text("update_ready", version=version))
+            action.configure(
+                text=self.text("update"), command=partial(self.run_upgrade, upgrade, version, message, action)
+            )
+        else:
+            action.configure(
+                text=self.text("copy_command"), command=partial(self.copy_upgrade_command, action)
+            )
+        action.pack(side="right", padx=6)
+        message.pack(side="left", fill="x", expand=True, padx=12, pady=8)
+
+    def copy_upgrade_command(self, button: ctk.CTkButton) -> None:
+        self.root.clipboard_clear()
+        self.root.clipboard_append(UPGRADE_COMMAND)
+        button.configure(text=self.text("copied"))
+
+    def run_upgrade(
+        self, command: list[str], version: str, message: ctk.CTkLabel, button: ctk.CTkButton
+    ) -> None:
+        """Upgrade with pipx in the background, then offer a restart; on failure show the manual command."""
+        button.configure(text=self.text("updating"), state="disabled")
+
+        def upgrade() -> bool:
+            try:
+                return subprocess.run(command, capture_output=True, timeout=300).returncode == 0
+            except (OSError, subprocess.TimeoutExpired):
+                return False
+
+        def done(succeeded: bool) -> None:
+            if succeeded:
+                message.configure(text=self.text("update_done", version=version))
+                button.configure(text=self.text("restart"), state="normal", command=self.restart)
+            else:
+                message.configure(text=self.text("update_failed", command=UPGRADE_COMMAND))
+                button.configure(
+                    text=self.text("copy_command"),
+                    state="normal",
+                    command=partial(self.copy_upgrade_command, button),
+                )
+
+        self.run_in_background(upgrade, done)
+
+    def restart(self) -> None:
+        os.execv(sys.executable, [sys.executable, "-m", "zen_profile_selector"])
+
+    def run_in_background(self, work: Callable[[], T], on_done: Callable[[T], None]) -> None:
+        """Run work in a thread and hand its result to on_done in the Tk main loop."""
+        result: list[T] = []
+        thread = threading.Thread(target=lambda: result.append(work()), daemon=True)
+        thread.start()
+
+        def poll() -> None:
+            # Tk is not thread safe: poll from the main loop instead of calling it from the thread
+            if thread.is_alive():
+                self.root.after(200, poll)
+            elif result:
+                on_done(result[0])
+
+        self.root.after(200, poll)
+
+    def dismiss_update(self, version: str) -> None:
+        self.update_state = replace(self.update_state, dismissed=version)
+        save_update_state(self.settings_dir, self.update_state)
+        self.build()
+
+    def start_update_check(self) -> None:
+        """Ask PyPI for the latest version in the background, at most once a day."""
+        if not (
+            self.settings.check_updates and self.version and update_check_due(self.update_state, date.today())
+        ):
+            return
+
+        def finish(latest: str | None) -> None:
+            if not latest:
+                return  # offline: try again at the next start
+            announced = version_to_announce(self.update_state, self.version)
+            self.update_state = replace(self.update_state, checked=date.today().isoformat(), latest=latest)
+            save_update_state(self.settings_dir, self.update_state)
+            if version_to_announce(self.update_state, self.version) != announced:
+                self.build()
+
+        self.run_in_background(fetch_latest_version, finish)
+
     def detect(self, settings: Settings) -> ZenInstall | None:
         return detect_zen(
             Path.home(),
@@ -120,6 +247,7 @@ class ProfileSelector:
         self.profiles = read_profiles(self.install.profiles_dir) if self.install else {}
 
         self.build_top_bar()
+        self.build_update_banner()
         tk.Label(self.root, image=self.logo, bg=BACKGROUND, borderwidth=0, highlightthickness=0).pack(
             pady=(0, 20), padx=20
         )
@@ -387,6 +515,11 @@ class ProfileSelector:
             command=detect_automatically,
         ).pack(anchor="w", padx=18, pady=(4, 0))
 
+        check_updates = tk.BooleanVar(value=self.settings.check_updates)
+        ctk.CTkCheckBox(
+            dialog, text=self.text("check_updates"), variable=check_updates, text_color=TEXT
+        ).pack(anchor="w", padx=24, pady=(12, 0))
+
         error_label = ctk.CTkLabel(dialog, text="", text_color=ERROR)
         error_label.pack(padx=24, pady=(8, 0))
 
@@ -396,19 +529,29 @@ class ProfileSelector:
             if error:
                 error_label.configure(text=self.text(error))
                 return
-            self.settings = replace(self.settings, zen_command=command, profiles_dir=profiles_dir)
+            self.settings = replace(
+                self.settings,
+                zen_command=command,
+                profiles_dir=profiles_dir,
+                check_updates=check_updates.get(),
+            )
             save_settings(self.settings_dir, self.settings)
             dialog.destroy()
             self.build()
 
         buttons = ctk.CTkFrame(dialog, fg_color=BACKGROUND)
-        buttons.pack(padx=24, pady=(8, 24), fill="x")
+        buttons.pack(padx=24, pady=(8, 12), fill="x")
         ctk.CTkButton(
             buttons, text=self.text("cancel"), fg_color=CARD, hover_color=HOVER, command=dialog.destroy
         ).pack(side="left", expand=True, padx=(0, 4))
         ctk.CTkButton(buttons, text=self.text("save"), command=save).pack(
             side="left", expand=True, padx=(4, 0)
         )
+
+        if self.version:
+            ctk.CTkLabel(dialog, text=self.text("version", version=self.version), text_color="#9a9a9a").pack(
+                pady=(0, 12)
+            )
 
     def open_new_profile_dialog(self) -> None:
         def create(name: str, icon: str) -> str | None:

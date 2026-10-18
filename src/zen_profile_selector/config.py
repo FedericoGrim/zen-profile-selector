@@ -7,6 +7,7 @@ import shutil
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
+from typing import Any
 
 APP_NAME = "zen-profile-selector"
 SETTINGS_FILE = "config.json"
@@ -17,6 +18,7 @@ class Settings:
     language: str | None = None
     zen_command: str = ""
     profiles_dir: str = ""
+    check_updates: bool = True
 
     @property
     def profiles_dir_path(self) -> Path | None:
@@ -37,11 +39,11 @@ def load_settings(folder: Path) -> Settings:
     if not isinstance(data, dict):
         return Settings()
     defaults = Settings()
-    valid = {}
+    valid: dict[str, Any] = {}
     for field in fields(Settings):
         value = data.get(field.name)
         default = getattr(defaults, field.name)
-        if isinstance(value, str) and (default is None or isinstance(default, str)):
+        if isinstance(value, str if default is None else type(default)):
             valid[field.name] = value
     return Settings(**valid)
 
