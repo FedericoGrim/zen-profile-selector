@@ -35,3 +35,11 @@ Significant decisions for this project. Newest at the bottom. Entries are never 
 - **Decision:** Every release created by release-please is built from its tag, checked with `twine check`, and uploaded to PyPI as `zen-profile-selector` by the `publish` job in the `pypi` environment, authenticated with PyPI trusted publishing (OIDC). The README recommends `pipx install zen-profile-selector`.
 - **Alternatives:** A PyPI API token stored as a repository secret (a long-lived credential to leak and rotate); keeping Git-only installs (no stats, longer command).
 - **Consequences:** No publishing secret exists in the repository. A version number can be uploaded only once, so a broken upload is fixed with a new patch release.
+
+## 005 — Automatic back-merge after each release
+- **Date:** 2026-10-18
+- **Status:** Accepted
+- **Context:** After every release `main` must be merged back into `develop`. Doing it by hand was repetitive and easy to get wrong (a rebase merge in #36 left `develop` behind `main`).
+- **Decision:** The `back-merge` job of the release workflow creates `chore/back-merge-X.Y.Z` from `main`, merges `develop` into it, opens the pull request into `develop` and enables auto-merge with a merge commit. Pull requests opened by the GitHub Actions bot wait for a manual approval before their `pull_request` CI starts, so the job also starts CI on the branch with `workflow_dispatch`; its checks satisfy the `develop` branch protection.
+- **Alternatives:** Keeping the manual back-merge; a personal access token so the bot's pull request triggers CI normally (a long-lived secret to manage).
+- **Consequences:** No manual step after a release and no new secret. The back-merge only carries changes already merged and checked on `main`. "Allow auto-merge" is enabled in the repository settings. If the merge of `develop` conflicts, the job fails and the back-merge is done by hand.
