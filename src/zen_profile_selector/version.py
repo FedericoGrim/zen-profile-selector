@@ -16,6 +16,7 @@ from .config import APP_NAME
 
 PYPI_URL = f"https://pypi.org/pypi/{APP_NAME}/json"
 UPGRADE_COMMAND = f"pipx upgrade {APP_NAME}"
+RELEASES_URL = f"https://github.com/FedericoGrim/{APP_NAME}/releases/latest"
 UPDATE_FILE = "update_check.json"
 
 
@@ -37,6 +38,11 @@ def pipx_upgrade_command(
     if pipx is None or not in_pipx:
         return None
     return [pipx, "upgrade", APP_NAME]
+
+
+def restart_command(executable: str, frozen: bool) -> list[str]:
+    """Command that starts the selector again: the Windows build is its own executable."""
+    return [executable] if frozen else [executable, "-m", "zen_profile_selector"]
 
 
 def parse_version(text: str) -> tuple[int, ...] | None:

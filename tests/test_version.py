@@ -11,6 +11,7 @@ from zen_profile_selector.version import (
     is_newer,
     load_update_state,
     pipx_upgrade_command,
+    restart_command,
     save_update_state,
     update_check_due,
     version_to_announce,
@@ -120,3 +121,16 @@ def test_other_installs_or_missing_pipx_cannot_update_themselves():
 def test_windows_pipx_installs_can_update_themselves():
     python = r"C:\Users\me\pipx\venvs\zen-profile-selector\Scripts\python.exe"
     assert pipx_upgrade_command(python, which=pipx_on_path, system="win32") is not None
+
+
+def test_restart_runs_the_package_with_python():
+    assert restart_command("/usr/bin/python3", frozen=False) == [
+        "/usr/bin/python3",
+        "-m",
+        "zen_profile_selector",
+    ]
+
+
+def test_restart_of_the_windows_build_runs_its_executable():
+    exe = r"C:\Users\me\AppData\Local\Programs\Zen Profile Selector\zen-profile-selector.exe"
+    assert restart_command(exe, frozen=True) == [exe]
