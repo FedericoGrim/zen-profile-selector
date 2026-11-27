@@ -18,3 +18,7 @@ def primary_monitor(xrandr_output: str) -> tuple[int, int, int, int] | None:
         return None
     width, height, x, y = map(int, match.groups())
     return x, y, width, height
+
+
+def shorten_link(link: str, max_length: int) -> str:
+    return link if len(link) <= max_length else link[: max_length - 1] + "…"
