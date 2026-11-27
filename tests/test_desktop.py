@@ -27,9 +27,14 @@ def test_desktop_file_defaults_to_local_share(tmp_path):
 def test_desktop_entry_runs_the_package_with_its_python(tmp_path):
     entry = desktop_entry(Path("/venv/bin/python"), Path("/venv/assets/icon.png"))
     assert "[Desktop Entry]" in entry
-    assert 'Exec="/venv/bin/python" -m zen_profile_selector' in entry
+    assert 'Exec="/venv/bin/python" -m zen_profile_selector %u' in entry
     assert "Icon=/venv/assets/icon.png" in entry
     assert "Type=Application" in entry
+
+
+def test_desktop_entry_can_be_chosen_as_the_web_browser():
+    entry = desktop_entry(Path("/venv/bin/python"), Path("/venv/assets/icon.png"))
+    assert "MimeType=x-scheme-handler/http;x-scheme-handler/https;text/html;" in entry
 
 
 def test_install_then_uninstall(tmp_path):
