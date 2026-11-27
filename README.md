@@ -15,6 +15,7 @@ Click a profile and Zen opens with it. Create, rename, re-icon and delete profil
 - **Edit profiles**: hover a card and click ✎ to rename it or change its icon. Renaming only changes the displayed name; the profile folder, with your bookmarks, passwords and history, is not touched.
 - **Safe deletion**: you must type the profile name to confirm. Profiles that are open in Zen cannot be deleted, the last profile cannot be deleted, and the profile folder goes to your **Trash**, so it can be restored. A backup of `profiles.ini` is written before every change.
 - **Works with any Zen install**: detects the Flatpak (`app.zen_browser.zen`) and native installs (`zen` / `zen-browser` on your `PATH`) automatically. If detection fails, set the Zen command and profiles folder by hand in **Settings** (⚙, top right).
+- **Choose the profile for every link**: set the selector as your default web browser and each link you open from another app shows the profile grid first. The link opens in the profile you click, in a new tab if that profile is already running. Press Esc to cancel.
 - **English and Italian**: pick the language from the menu next to ⚙. The choice is remembered.
 - **Update notice**: once a day the selector checks PyPI in the background and, when a newer version exists, shows a small banner. Click **Update** to run `pipx upgrade` for you, then **Restart**; installs not made with pipx get the command to copy instead. Turn it off in **Settings**, where you can also see the installed version.
 
@@ -43,6 +44,14 @@ On Linux, add it to your applications menu:
 ```bash
 zen-profile-selector --install-desktop
 ```
+
+To choose the profile every time you open a link, make the selector your default web browser, from your desktop's default applications settings or with:
+
+```bash
+xdg-settings set default-web-browser zen-profile-selector.desktop
+```
+
+If you added it to the menu with an older version, run `--install-desktop` again first: the menu entry now accepts links.
 
 Update with `pipx upgrade zen-profile-selector`. Remove it from the menu with `--uninstall-desktop`, and uninstall it with `pipx uninstall zen-profile-selector`.
 
