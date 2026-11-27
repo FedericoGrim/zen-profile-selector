@@ -91,8 +91,12 @@ def detect_zen(
     return detected
 
 
-def launch_command(install: ZenInstall, profile_path: str) -> list[str]:
-    return [*install.command, "--profile", profile_path]
+def launch_command(install: ZenInstall, profile_path: str, link: str | None = None) -> list[str]:
+    if link is None:
+        return [*install.command, "--profile", profile_path]
+    if link.startswith("-"):
+        raise ValueError(f"not a link: {link!r}")
+    return [*install.command, "--profile", profile_path, link]
 
 
 def create_profile_command(install: ZenInstall, name: str) -> list[str]:

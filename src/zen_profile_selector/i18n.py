@@ -49,6 +49,7 @@ TRANSLATIONS = {
         "trash_failed": "Could not move the profile folder to the Trash",
         "zen_start_failed": "Could not run Zen to create the profile",
         "create_failed": "Zen did not create the profile",
+        "open_link_with": "Open {link} with:",
     },
     "it": {
         "new_card": "Nuovo",
@@ -91,6 +92,7 @@ TRANSLATIONS = {
         "trash_failed": "Impossibile spostare la cartella nel Cestino",
         "zen_start_failed": "Impossibile avviare Zen per creare il profilo",
         "create_failed": "Zen non ha creato il profilo",
+        "open_link_with": "Apri {link} con:",
     },
 }
 

@@ -23,7 +23,7 @@ from .config import Settings, config_dir, load_settings, save_settings, validate
 from .desktop import desktop_file, install_desktop_entry, uninstall_desktop_entry
 from .emoji import emoji_image
 from .i18n import LANGUAGES, detect_language, translate, windows_display_locale
-from .layout import grid_columns, primary_monitor
+from .layout import grid_columns, primary_monitor, shorten_link
 from .profiles import (
     DEFAULT_ICON,
     ICON_CHOICES,
@@ -58,6 +58,7 @@ ASSETS = Path(__file__).with_name("assets")
 FROZEN = getattr(sys, "frozen", False)
 T = TypeVar("T")
 ICONS_FILE_NAME = "profile_icons.json"
+LINK_DISPLAY_LENGTH = 60
 
 BACKGROUND = "#212122"
 CARD = "#2a2a2a"
@@ -68,8 +69,9 @@ ERROR = "#ff6464"
 
 
 class ProfileSelector:
-    def __init__(self, root: ctk.CTk, settings_dir: Path):
+    def __init__(self, root: ctk.CTk, settings_dir: Path, link: str | None = None):
         self.root = root
+        self.link = link
         self.settings_dir = settings_dir
         self.icons_file = settings_dir / ICONS_FILE_NAME
         self.settings = load_settings(settings_dir)
@@ -86,6 +88,8 @@ class ProfileSelector:
         self.logo = tk.PhotoImage(file=ASSETS / "icon-header.png")
         self.root.iconphoto(True, self.logo)
         self.set_windows_icon(self.root)
+        if link:
+            self.root.bind("<Escape>", lambda event: self.root.quit())
 
         self.build()
         self.start_update_check()
@@ -286,6 +290,9 @@ class ProfileSelector:
         tk.Label(self.root, image=self.logo, bg=BACKGROUND, borderwidth=0, highlightthickness=0).pack(
             pady=(0, 20), padx=20
         )
+        if self.link:
+            link_text = self.text("open_link_with", link=shorten_link(self.link, LINK_DISPLAY_LENGTH))
+            ctk.CTkLabel(self.root, text=link_text, text_color=TEXT).pack(padx=40, pady=(0, 16))
 
         if self.install is None:
             ctk.CTkLabel(self.root, text=self.text("zen_not_found"), text_color=ERROR).pack(
@@ -724,7 +731,7 @@ class ProfileSelector:
 
     def launch_zen(self, profile_path: str) -> None:
         assert self.install is not None
-        subprocess.Popen(launch_command(self.install, profile_path), start_new_session=True)
+        subprocess.Popen(launch_command(self.install, profile_path, self.link), start_new_session=True)
         self.root.after(500, self.root.quit)
 
 
@@ -732,6 +739,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         prog="zen-profile-selector", description="Profile picker for Zen Browser."
     )
+    parser.add_argument("link", nargs="?", help="link to open in the chosen profile")
     parser.add_argument(
         "--install-desktop", action="store_true", help="add the selector to the applications menu"
     )
@@ -753,5 +761,5 @@ def main() -> None:
         return
 
     root = ctk.CTk()
-    ProfileSelector(root, config_dir(os.environ, Path.home()))
+    ProfileSelector(root, config_dir(os.environ, Path.home()), args.link)
     root.mainloop()
