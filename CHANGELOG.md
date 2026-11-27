@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.4.0...zen-profile-selector-v0.5.0) (2026-11-27)
+
+
+### Features
+
+* **app:** open a link given on the command line in the chosen profile ([781bb4b](https://github.com/FedericoGrim/zen-profile-selector/commit/781bb4b1b1d08e306d106325c3471283a04e7dc8))
+* **desktop:** offer the selector as a web browser that receives links ([d8a877c](https://github.com/FedericoGrim/zen-profile-selector/commit/d8a877cfa6b8958661d0a8a4aaa0bb9b226df409))
+* **layout:** shorten long links for display ([df3fcdf](https://github.com/FedericoGrim/zen-profile-selector/commit/df3fcdfdf1eee255856c6e590199c9cdbe002b75))
+* **zen:** pass a link to Zen when opening a profile ([80a7bd3](https://github.com/FedericoGrim/zen-profile-selector/commit/80a7bd3b4b0785542f4ed7a68bbd80241195ea13))
+
+
+### Documentation
+
+* explain how to choose the profile for every link ([944d536](https://github.com/FedericoGrim/zen-profile-selector/commit/944d5365741ff6550f3bced6ba0df555967f287a))
+
 ## [0.4.0](https://github.com/FedericoGrim/zen-profile-selector/compare/zen-profile-selector-v0.3.0...zen-profile-selector-v0.4.0) (2026-10-18)
 
 
