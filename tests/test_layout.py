@@ -1,4 +1,4 @@
-from zen_profile_selector.layout import grid_columns, primary_monitor
+from zen_profile_selector.layout import grid_columns, primary_monitor, shorten_link
 
 TWO_MONITORS = """Monitors: 2
  0: +*HDMI-0 1920/527x1080/296+1080+840  HDMI-0
@@ -27,3 +27,14 @@ def test_primary_monitor_is_read_from_xrandr():
 def test_no_primary_monitor_gives_none():
     assert primary_monitor(NO_PRIMARY) is None
     assert primary_monitor("") is None
+
+
+def test_short_links_are_shown_whole():
+    assert shorten_link("https://example.org/page", 40) == "https://example.org/page"
+
+
+def test_long_links_are_cut_with_an_ellipsis():
+    link = "https://example.org/" + "a" * 100
+    shortened = shorten_link(link, 40)
+    assert len(shortened) == 40
+    assert shortened == link[:39] + "…"
