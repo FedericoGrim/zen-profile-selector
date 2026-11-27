@@ -17,10 +17,11 @@ def desktop_entry(python: Path, icon: Path) -> str:
         "Type=Application\n"
         "Name=Zen Profile Selector\n"
         "Comment=Choose the Zen Browser profile to open\n"
-        f'Exec="{python}" -m zen_profile_selector\n'
+        f'Exec="{python}" -m zen_profile_selector %u\n'
         f"Icon={icon}\n"
         "Terminal=false\n"
         "Categories=Network;WebBrowser;\n"
+        "MimeType=x-scheme-handler/http;x-scheme-handler/https;text/html;\n"
     )
 
 
