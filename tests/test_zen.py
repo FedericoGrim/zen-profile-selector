@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from zen_profile_selector.zen import (
     FLATPAK_ID,
     ZenInstall,
@@ -142,6 +144,22 @@ def test_launch_and_create_commands_use_the_install_command(tmp_path):
     install = ZenInstall(FLATPAK_COMMAND, tmp_path)
     assert launch_command(install, "/p/abc.Work") == [*FLATPAK_COMMAND, "--profile", "/p/abc.Work"]
     assert create_profile_command(install, "Gaming") == [*FLATPAK_COMMAND, "--CreateProfile", "Gaming"]
+
+
+def test_launch_command_opens_the_link_in_the_profile(tmp_path):
+    install = ZenInstall(FLATPAK_COMMAND, tmp_path)
+    assert launch_command(install, "/p/abc.Work", "https://example.org/page") == [
+        *FLATPAK_COMMAND,
+        "--profile",
+        "/p/abc.Work",
+        "https://example.org/page",
+    ]
+
+
+def test_launch_command_refuses_a_link_that_looks_like_an_option(tmp_path):
+    install = ZenInstall(FLATPAK_COMMAND, tmp_path)
+    with pytest.raises(ValueError):
+        launch_command(install, "/p/abc.Work", "--headless")
 
 
 def test_windows_finds_zen_in_program_files(tmp_path):
