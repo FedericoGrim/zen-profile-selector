@@ -22,7 +22,8 @@ jobs:
       - run: pre-commit run --all-files --show-diff-on-failure
 
   test:
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04 runners have no Python 3.9, still the oldest supported version
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.9", "3.12"]
